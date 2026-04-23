@@ -2,6 +2,21 @@
 
 Context for future Claude sessions working on this repository.
 
+## Design principle: sections and cards, never screens
+
+The plugin only ever inserts **discrete components** — one card, a list
+of cards, a grid of cards, or one-or-more detail-page sections.
+It deliberately does **not** insert full screens, which means:
+
+- No iOS/Android status bar, safe-area insets, notches
+- No sticky header chrome, back / share / heart buttons
+- No bottom navigation bar or home indicator
+- No sticky bottom CTA bar
+- No screen-shaped wrapper with background fill / padding / rounded
+  corners (multi-item inserts use a plain auto-layout group, no chrome)
+
+Designers compose the card/section outputs into their own screens.
+
 ## What this is
 
 A **Proof-of-Concept Figma plugin** that lets HomeToGo designers insert real

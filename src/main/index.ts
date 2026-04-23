@@ -160,24 +160,26 @@ async function insertCards(
     return created;
   }
 
+  // Pure layout frame — no background fill, no padding, no corner
+  // radius. It groups the cards for auto-layout only so designers can
+  // drop it into their own screen chrome.
   const container = figma.createFrame();
   container.name =
     mode === 'grid'
-      ? `HTG Search Grid (${offers.length}) · ${platform}`
-      : `HTG Search Results (${offers.length}) · ${platform}`;
+      ? `HTG Card Grid · ${platform} · ${offers.length}`
+      : `HTG Card List · ${platform} · ${offers.length}`;
   container.layoutMode = mode === 'grid' ? 'HORIZONTAL' : 'VERTICAL';
   container.itemSpacing = LAYOUT_GAP;
-  container.paddingTop = container.paddingBottom = CONTAINER_PADDING;
-  container.paddingLeft = container.paddingRight = CONTAINER_PADDING;
-  container.cornerRadius = 20;
-  container.fills = [{ type: 'SOLID', color: { r: 0.969, g: 0.976, b: 0.988 } }];
+  container.fills = [];
+  container.paddingTop = container.paddingBottom = 0;
+  container.paddingLeft = container.paddingRight = 0;
+  container.cornerRadius = 0;
 
   if (mode === 'grid') {
     const cols = Math.max(1, Math.min(4, gridColumns || 2));
     container.layoutWrap = 'WRAP';
     container.counterAxisSpacing = LAYOUT_GAP;
-    const gridWidth =
-      cols * spec.cardWidth + (cols - 1) * LAYOUT_GAP + CONTAINER_PADDING * 2;
+    const gridWidth = cols * spec.cardWidth + (cols - 1) * LAYOUT_GAP;
     container.resizeWithoutConstraints(gridWidth, 1);
     container.primaryAxisSizingMode = 'FIXED';
   } else {
@@ -198,26 +200,41 @@ async function insertCards(
 }
 
 async function insertSections(payload: InsertSectionsPayload): Promise<void> {
-  const { offerId, sections, locale } = payload;
+  const { offerId, sections, locale, platform } = payload;
   const offer = OFFER_BY_ID[offerId];
   if (!offer || sections.length === 0) {
     figma.notify('Pick at least one section to insert.', { error: true });
     return;
   }
 
+  // Single section → drop it on the canvas directly. No wrapper.
+  if (sections.length === 1) {
+    const node = await buildSection(sections[0], offer, locale, platform);
+    node.x = figma.viewport.center.x - node.width / 2;
+    node.y = figma.viewport.center.y - node.height / 2;
+    figma.currentPage.appendChild(node);
+    figma.currentPage.selection = [node];
+    figma.viewport.scrollAndZoomIntoView([node]);
+    figma.notify(`Inserted "${sections[0]}" for "${offer.title}"`);
+    return;
+  }
+
+  // Multiple sections → pure auto-layout group (no fills, no padding,
+  // no radius) so designers can drop it straight into their own screen
+  // chrome without having to unstyle a wrapper.
   const container = figma.createFrame();
-  container.name = `HTG Detail · ${offer.title}`;
+  container.name = `HTG Sections · ${platform} · ${offer.title}`;
   container.layoutMode = 'VERTICAL';
   container.primaryAxisSizingMode = 'AUTO';
   container.counterAxisSizingMode = 'AUTO';
-  container.itemSpacing = LAYOUT_GAP;
-  container.paddingTop = container.paddingBottom = CONTAINER_PADDING;
-  container.paddingLeft = container.paddingRight = CONTAINER_PADDING;
-  container.cornerRadius = 24;
-  container.fills = [{ type: 'SOLID', color: { r: 0.969, g: 0.976, b: 0.988 } }];
+  container.itemSpacing = platform === 'web' ? LAYOUT_GAP : 0;
+  container.fills = [];
+  container.paddingTop = container.paddingBottom = 0;
+  container.paddingLeft = container.paddingRight = 0;
+  container.cornerRadius = 0;
 
   for (const kind of sections) {
-    const node = await buildSection(kind, offer, locale);
+    const node = await buildSection(kind, offer, locale, platform);
     container.appendChild(node);
   }
 
@@ -228,8 +245,6 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
   figma.currentPage.selection = [container];
   figma.viewport.scrollAndZoomIntoView([container]);
   figma.notify(
-    sections.length === 1
-      ? `Inserted "${sections[0]}" for "${offer.title}"`
-      : `Inserted ${sections.length} detail sections for "${offer.title}"`,
+    `Inserted ${sections.length} detail sections for "${offer.title}"`,
   );
 }

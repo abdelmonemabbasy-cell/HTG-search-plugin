@@ -31,6 +31,21 @@ populated HomeToGo product card onto the canvas.
 - **Adaptive rendering**: every card section is conditional on the offer
   actually having that data. No placeholder noise.
 
+## Non-goals — what the plugin intentionally does NOT do
+
+The plugin **inserts components, not screens**. It never generates:
+
+- iOS/Android status bars, safe-area insets, notches
+- Sticky headers / back / share / heart chrome
+- Bottom navigation bars or home indicators
+- Sticky bottom CTA bars
+- Background frames shaped like a phone screen
+
+Multi-item inserts (list / grid / multi-section) use a plain
+auto-layout group with no fills, no padding, no corner radius, no
+stroke — purely for spacing. Designers wrap the output in their own
+screen chrome.
+
 ## Out of scope (deferred to v2 or later)
 
 - **Real API integration.** The internal HTG search/product API is not
