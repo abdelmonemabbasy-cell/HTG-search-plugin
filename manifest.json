@@ -1,8 +1,1 @@
-{
-  "name": "API Edge Case Tester",
-  "id": "12345678",
-  "api": "1.0.0",
-  "main": "code.js",
-  "ui": "ui.html",
-  "editorType": ["figma"]
-}
+{"api":"1.0.0","editorType":["figma"],"id":"htg-data-plugin-poc","name":"HomeToGo Data","main":"build/main.js","ui":"build/ui.js","documentAccess":"dynamic-page","networkAccess":{"allowedDomains":["https://images.unsplash.com"],"reasoning":"Fetches listing photos from Unsplash for the PoC mock data. v2 will add HomeToGo CDN + API domains."}}
