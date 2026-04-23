@@ -28,6 +28,9 @@ export const ICON = {
   elevator: svg('<rect x="4" y="2" width="16" height="20" rx="1"/><polyline points="9 8 12 5 15 8"/><polyline points="9 16 12 19 15 16"/>', 18),
   pool: svg('<path d="M2 12c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M2 18c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M6 6h4a2 2 0 0 1 2 2v4"/>', 18),
   clean: svg('<path d="M3 21v-7l6-6 4 4-6 6H3z"/><path d="M12 3l2-2 8 8-2 2"/><line x1="13" y1="10" x2="18" y2="15"/>', 18),
+  pin: svg('<path d="M12 22s-8-7.58-8-13a8 8 0 1 1 16 0c0 5.42-8 13-8 13z"/><circle cx="12" cy="9" r="2.5"/>', 14),
+  check: svg('<polyline points="20 6 9 17 4 12"/>', 14),
+  heartFilled: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#5B6B7E" stroke="#5B6B7E" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
 } as const;
 
 export type IconName = keyof typeof ICON;

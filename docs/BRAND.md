@@ -90,6 +90,46 @@ The card renders only what the offer carries. What you'll see vary:
 - **Category label** — `offer.categoryLabel` wins, falls back to a
   capitalised `propertyType`.
 
+## iOS / Android SERP card
+
+Matches the HomeToGo native-app search-results card as supplied in
+Figma. Same layout on both iOS and Android; platform-specific tokens
+below.
+
+```
+┌────────────────────────────────────────────┐ 375 px
+│ ┌────┐                              ┌──┐  │
+│ │2-21│                              │♡ │  │ ← date badge · heart button
+│ └────┘                              └──┘  │
+│                                            │ image
+│           (hero image fill)                │ 280 px
+│                                            │
+│ ┌────────────────┐                         │
+│ │Last-minute -10%│  ← discount (adaptive)  │
+│ └────────────────┘                         │
+├────────────────────────────────────────────┤
+│ 800 m² Resort · 1 bedroom · 2 guests       │ meta 13 regular
+│ Buenavista grand hotel                     │ title 20 bold
+│ ★★★★★ 4.8/5 (304)                          │ stars 16 violet + 13
+│ 📍 Jungutbatu, Bali                        │ pin + 13 regular
+│ €5.000.000 total                           │ price 18 bold + suffix
+│ ──────────────────────────────────────     │ divider
+│ Compare                              ☐     │ compare row
+└────────────────────────────────────────────┘
+```
+
+| Token | iOS | Android |
+|-------|-----|---------|
+| Corner radius | 16 | 12 |
+| Stroke | 1px `--htg-border` | none |
+| Shadow alpha / blur / y | 0.06 / 12 / 2 | 0.14 / 18 / 4 |
+| Checkbox radius | 4 | 2 |
+| Date-badge bg | `#FFFFFF` @ 92% | same |
+| Heart button | 40×40 white + tiny shadow | same |
+
+All strings (category label, "guests", "bedroom", "total", "Compare")
+render in the selected locale.
+
 ## Reference screenshots
 
 The design targets are the live HomeToGo search-result cards, e.g.

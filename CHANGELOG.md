@@ -5,6 +5,69 @@ in ISO-8601 (YYYY-MM-DD).
 
 ## [Unreleased]
 
+### 0.4.0 — 2026-04-23 — iOS SERP card redesign + Android variant
+
+**Changed — iOS card**
+
+Rewritten to match the HomeToGo native-app SERP frame (provided as a
+Figma screenshot). The horizontal-mobile layout from v0.3 is gone;
+the new layout mirrors what the designer supplied:
+
+- **Dimensions** 375×560 (was 375×420). Corner radius stays 16.
+- **Image area** 375×280 at the top, edge-to-edge under the rounded
+  card corners (clipsContent true).
+- **Date badge** ("2 Aug - 21 Aug") — a new rounded pill at top-left
+  of the image, 92% white. Bound to the new optional
+  `offer.travelDatesLabel`; omitted when absent.
+- **Heart button** — 40×40 circular white pill top-right, with its
+  own subtle drop shadow.
+- **Meta line** above the title: "{area} m² {type} · N bedroom · N guests"
+  (area optional — reads from new `offer.areaSqm`). Replaces the
+  v0.3 category-only label.
+- **Title** — 20 / Bold, 2 lines max via Figma auto-layout text-auto-height.
+- **Rating** — 5 graphical stars (purple) + "4.8/5 (304)" text. Replaces
+  the single-star + number layout.
+- **Location** — pin icon + "{neighborhood}, {city}" (or "{city}, {country}"
+  if no neighborhood). New `pin` SVG in `src/main/icons.ts`.
+- **Price** — bold **total** + light "total" suffix (Figma locale-formatted,
+  e.g. `€5.000.000`). Replaces the per-night + CTA row.
+- **Compare row** — divider above; "Compare" label + 22×22 outlined
+  checkbox on the right. Replaces the gradient "View deal" button.
+- Discount pill now renders as a coral rounded rectangle at the
+  **bottom-left** of the image (adaptive — only when `offer.discount` is set).
+
+**Added — Android variant**
+
+Derived from the iOS SERP design, adjusted for Material 3 conventions:
+
+- **Corner radius** 12 (was iOS 16).
+- **No stroke** — Material 3 surfaces use elevation instead.
+- **Stronger shadow** (alpha 0.14, 18px blur, 4px y-offset).
+- **Checkbox** 2px radius (near-square, Material 3 shape).
+- All other structure (image, date badge, heart, meta, stars, pin,
+  total, compare row) identical to iOS so HTG keeps cross-platform
+  parity.
+
+**Added — data model**
+
+- `Offer.travelDatesLabel?: string` — renders the top-left date pill.
+  Seeded across all 10 offers with varied destination-appropriate
+  dates (Berlin in March, Mallorca in August, etc.).
+- `Offer.areaSqm?: number` — surfaces in the mobile meta line as
+  "{area} m² {type}". Seeded across all 10 offers.
+
+**Added — icons**
+
+- `pin` — 14px map pin, used in the location row.
+- `check` — 14px checkmark, reserved for the checked-checkbox state.
+- `heartFilled` — filled heart variant, reserved for favourited state.
+
+**Upcoming**
+
+- The **Details Scroll** iOS frame is pending — when supplied the
+  Phase A detail sections (`gallery`, `amenities`, `reviews`,
+  `priceBreakdown`) will be re-pitched to match.
+
 ### 0.3.0 — 2026-04-23 — Locale, platform, Phase A detail sections
 
 **Added**

@@ -144,6 +144,16 @@ export interface Offer {
   cancellation: 'free_until_7d' | 'free_until_24h' | 'non_refundable' | 'flexible';
   url: string;
   shortDescription?: string;
+  /**
+   * Optional travel-dates label shown as a pill on mobile cards
+   * (e.g. "2 Aug - 21 Aug"). When absent, the pill is omitted.
+   */
+  travelDatesLabel?: string;
+  /**
+   * Optional area in square metres, surfaced in the mobile meta line
+   * (e.g. "800 m² Resort").
+   */
+  areaSqm?: number;
   /** Full description for the About section on the detail page. */
   fullDescription?: string;
   /** Bullet highlights shown alongside the description. */

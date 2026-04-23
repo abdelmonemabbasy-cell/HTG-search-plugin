@@ -333,24 +333,36 @@ async function buildWebCard(offer: Offer, locale: Locale): Promise<FrameNode> {
   return card;
 }
 
+/**
+ * Mobile card (iOS / Android) — matches the HomeToGo native-app SERP layout:
+ * full-width image with a date badge + heart overlay, a body with
+ * meta / bold title / purple 5-star rating / pinned location / total price /
+ * Compare-checkbox row.
+ *
+ * iOS: 16px radii, subtle shadow, thin border.
+ * Android: 12px radii, stronger elevation, no border (Material 3 feel).
+ */
 async function buildMobileCard(
   offer: Offer,
   locale: Locale,
   platform: Platform,
 ): Promise<FrameNode> {
   const spec = PLATFORM_SPEC[platform];
+  const width = spec.cardWidth;
+  const imageHeight = spec.imageHeight;
 
   const card = figma.createFrame();
   card.name = `HTG Card · ${offer.title} (${platform})`;
   card.layoutMode = 'VERTICAL';
   card.primaryAxisSizingMode = 'AUTO';
   card.counterAxisSizingMode = 'FIXED';
-  card.resize(spec.cardWidth, 1);
+  card.resize(width, 1);
   card.cornerRadius = spec.radius;
   card.fills = [{ type: 'SOLID', color: BRAND.white }];
   card.strokes = platform === 'android' ? [] : [{ type: 'SOLID', color: BRAND.border }];
   card.strokeWeight = 1;
   card.clipsContent = true;
+  card.itemSpacing = 0;
   card.effects = [
     {
       type: 'DROP_SHADOW',
@@ -363,11 +375,11 @@ async function buildMobileCard(
     },
   ];
 
-  // Image panel (top)
+  // -------- Image panel --------
   const image = figma.createFrame();
   image.name = '#image';
   image.layoutAlign = 'STRETCH';
-  image.resize(spec.cardWidth, spec.imageHeight);
+  image.resize(width, imageHeight);
   image.fills = [{ type: 'SOLID', color: BRAND.surface }];
   image.clipsContent = true;
 
@@ -377,19 +389,57 @@ async function buildMobileCard(
     if (hash) applyImageFill(image, hash);
   }
 
-  // Heart overlay top-right
+  // Date badge top-left
+  if (offer.travelDatesLabel) {
+    const dateBadge = figma.createFrame();
+    dateBadge.name = '#travelDates';
+    dateBadge.layoutMode = 'HORIZONTAL';
+    dateBadge.primaryAxisSizingMode = 'AUTO';
+    dateBadge.counterAxisSizingMode = 'AUTO';
+    dateBadge.paddingLeft = dateBadge.paddingRight = 10;
+    dateBadge.paddingTop = dateBadge.paddingBottom = 5;
+    dateBadge.cornerRadius = 8;
+    dateBadge.fills = [{ type: 'SOLID', color: BRAND.white, opacity: 0.92 }];
+    dateBadge.appendChild(
+      makeText(
+        'dateLabel',
+        offer.travelDatesLabel,
+        FONT.semibold,
+        12,
+        BRAND.textPrimary,
+      ),
+    );
+    image.appendChild(dateBadge);
+    dateBadge.x = 16;
+    dateBadge.y = 16;
+  }
+
+  // Heart button top-right — circular white
   const heartBg = figma.createFrame();
-  heartBg.resize(32, 32);
-  heartBg.cornerRadius = 16;
-  heartBg.fills = [{ type: 'SOLID', color: BRAND.white, opacity: 0.92 }];
-  heartBg.x = spec.cardWidth - 44;
-  heartBg.y = 12;
+  heartBg.name = 'heartBtn';
+  heartBg.resize(40, 40);
+  heartBg.cornerRadius = 20;
+  heartBg.fills = [{ type: 'SOLID', color: BRAND.white }];
+  heartBg.effects = [
+    {
+      type: 'DROP_SHADOW',
+      color: { r: 0.055, g: 0.094, b: 0.141, a: 0.12 },
+      offset: { x: 0, y: 1 },
+      radius: 4,
+      spread: 0,
+      visible: true,
+      blendMode: 'NORMAL',
+    },
+  ];
+  heartBg.x = width - 56;
+  heartBg.y = 16;
   const heartIcon = placeIcon('heart', BRAND.textPrimary);
-  heartIcon.x = heartBg.x + 8;
-  heartIcon.y = heartBg.y + 8;
+  heartIcon.x = heartBg.x + 11;
+  heartIcon.y = heartBg.y + 11;
   image.appendChild(heartBg);
   image.appendChild(heartIcon);
 
+  // Discount pill (if any) — bottom-left of image, coral
   if (offer.discount) {
     const pill = figma.createFrame();
     pill.name = '#discountLabel';
@@ -398,145 +448,152 @@ async function buildMobileCard(
     pill.counterAxisSizingMode = 'AUTO';
     pill.paddingLeft = pill.paddingRight = 10;
     pill.paddingTop = pill.paddingBottom = 5;
-    pill.cornerRadius = 999;
+    pill.cornerRadius = 8;
     pill.fills = [{ type: 'SOLID', color: BRAND.coral }];
     pill.appendChild(
       makeText(
         'discountText',
-        `-${offer.discount.percent}%`,
+        `${offer.discount.label ?? t('lastMinuteDeal', locale)} · -${offer.discount.percent}%`,
         FONT.bold,
         11,
         BRAND.white,
       ),
     );
-    pill.x = 12;
-    pill.y = 12;
     image.appendChild(pill);
+    pill.x = 16;
+    pill.y = imageHeight - pill.height - 16;
   }
 
   card.appendChild(image);
 
-  // Body
-  const body = vframe('body', spec.gap);
+  // -------- Body --------
+  const body = vframe('body', 6);
   body.layoutAlign = 'STRETCH';
   body.primaryAxisSizingMode = 'AUTO';
   body.counterAxisSizingMode = 'FIXED';
-  body.resize(spec.cardWidth, 1);
+  body.resize(width, 1);
   body.paddingTop = body.paddingBottom = spec.padding;
   body.paddingLeft = body.paddingRight = spec.padding;
 
+  // Meta: "800 m² Resort · 1 bedroom · 2 guests" (area is optional)
+  const metaParts: string[] = [];
+  const typeLabel = offer.categoryLabel ?? t(offer.propertyType, locale);
+  if (offer.areaSqm !== undefined) {
+    metaParts.push(`${offer.areaSqm} m² ${typeLabel}`);
+  } else {
+    metaParts.push(typeLabel);
+  }
+  metaParts.push(
+    `${offer.capacity.bedrooms} ${t(offer.capacity.bedrooms === 1 ? 'bedrooms' : 'bedrooms', locale)}`,
+  );
+  metaParts.push(`${offer.capacity.guests} ${t('guests', locale)}`);
   body.appendChild(
-    makeText(
-      '#categoryLabel',
-      offer.categoryLabel ?? t(offer.propertyType, locale),
-      FONT.medium,
-      12,
-      BRAND.textSecondary,
-    ),
+    makeText('#capacityMeta', metaParts.join(' · '), FONT.regular, 13, BRAND.textSecondary),
   );
 
+  // Title
   const title = makeText('#title', offer.title, FONT.bold, spec.titleSize, BRAND.textPrimary);
   title.layoutAlign = 'STRETCH';
   title.textAutoResize = 'HEIGHT';
   body.appendChild(title);
 
-  const locParts: string[] = [];
-  if (offer.location.distanceToCenterKm !== undefined) {
-    locParts.push(
-      t('kmToCenter', locale, { n: offer.location.distanceToCenterKm.toFixed(1) }),
-    );
-  }
-  if (offer.location.neighborhood) {
-    locParts.push(`${offer.location.city} ${offer.location.neighborhood}`);
-  } else {
-    locParts.push(`${offer.location.city}, ${offer.location.country}`);
-  }
-  body.appendChild(
-    makeText('#location', locParts.join(' · '), FONT.regular, 12, BRAND.textSecondary),
-  );
-
-  const iconNames = offer.amenities
-    .map((a) => AMENITY_TO_ICON[a])
-    .filter((n): n is IconName => n !== undefined)
-    .slice(0, MAX_AMENITY_ICONS_MOBILE);
-
-  if (iconNames.length > 0) {
-    const icons = hframe('amenities', 10);
-    icons.paddingTop = 4;
-    for (const n of iconNames) icons.appendChild(placeIcon(n, BRAND.textSecondary));
-    body.appendChild(icons);
-  }
-
-  const ratingRow = hframe('#ratingLine', 4);
-  ratingRow.paddingTop = 2;
+  // Rating — 5 graphical stars + "avg/5 (count)"
   if (offer.rating) {
-    ratingRow.appendChild(makeText('star', '★', FONT.bold, 13, BRAND.violet));
-    ratingRow.appendChild(
-      makeText('#ratingAverage', offer.rating.average.toFixed(1), FONT.bold, 13, BRAND.textPrimary),
-    );
+    const ratingRow = hframe('#ratingLine', 8);
+    ratingRow.paddingTop = 2;
+    ratingRow.counterAxisAlignItems = 'CENTER';
+
+    const stars = hframe('stars', 2);
+    const avg = offer.rating.average;
+    for (let i = 0; i < 5; i++) {
+      const filled = i < Math.floor(avg);
+      const half = !filled && i < Math.floor(avg) + (avg % 1 >= 0.3 ? 1 : 0);
+      const color = filled ? BRAND.violet : half ? BRAND.violet : BRAND.border;
+      const glyph = filled ? '★' : half ? '★' : '☆';
+      const star = makeText('star', glyph, FONT.bold, 16, color);
+      if (half) star.opacity = 0.6;
+      stars.appendChild(star);
+    }
+    ratingRow.appendChild(stars);
     ratingRow.appendChild(
       makeText(
-        '#ratingCount',
-        `(${offer.rating.count.toLocaleString()})`,
+        '#ratingLineText',
+        `${offer.rating.average.toFixed(1)}/5 (${offer.rating.count.toLocaleString()})`,
         FONT.regular,
-        12,
-        BRAND.textSecondary,
+        13,
+        BRAND.textPrimary,
       ),
     );
+    body.appendChild(ratingRow);
   } else {
-    ratingRow.appendChild(
-      makeText('newBadge', t('newListing', locale), FONT.medium, 12, BRAND.textSecondary),
+    body.appendChild(
+      makeText('#ratingLine', t('newListing', locale), FONT.medium, 13, BRAND.textSecondary),
     );
   }
-  body.appendChild(ratingRow);
 
-  // Price + button row
-  const priceRow = hframe('priceRow', 8);
-  priceRow.layoutAlign = 'STRETCH';
-  priceRow.primaryAxisSizingMode = 'FIXED';
-  priceRow.counterAxisAlignItems = 'CENTER';
-  priceRow.primaryAxisAlignItems = 'SPACE_BETWEEN';
-  priceRow.resize(spec.cardWidth - spec.padding * 2, 40);
-  priceRow.paddingTop = 8;
+  // Location with pin
+  const locRow = hframe('#locationRow', 6);
+  locRow.counterAxisAlignItems = 'CENTER';
+  locRow.appendChild(placeIcon('pin', BRAND.textSecondary));
+  const locText = offer.location.neighborhood
+    ? `${offer.location.neighborhood}, ${offer.location.city}`
+    : `${offer.location.city}, ${offer.location.country}`;
+  locRow.appendChild(
+    makeText('#location', locText, FONT.regular, 13, BRAND.textSecondary),
+  );
+  body.appendChild(locRow);
 
-  const priceStack = vframe('priceStack', 2);
-  if (offer.discount) {
-    const original = makeText(
-      '#priceOriginal',
-      formatPrice(offer.discount.originalPerNight, offer.price.currency, locale),
-      FONT.regular,
-      11,
-      BRAND.textSecondary,
-    );
-    original.textDecoration = 'STRIKETHROUGH';
-    priceStack.appendChild(original);
-  }
-  priceStack.appendChild(
+  // Price (total, bold + light "total" suffix)
+  const priceRow = hframe('priceRow', 6);
+  priceRow.counterAxisAlignItems = 'BASELINE';
+  priceRow.paddingTop = 4;
+  priceRow.appendChild(
     makeText(
-      '#pricePerNight',
-      formatPrice(offer.price.perNight, offer.price.currency, locale),
+      '#priceTotal',
+      formatPrice(offer.price.total, offer.price.currency, locale),
       FONT.bold,
       spec.priceSize,
       BRAND.textPrimary,
     ),
   );
-  priceRow.appendChild(priceStack);
-
-  const button = figma.createFrame();
-  button.name = 'viewDealBtn';
-  button.layoutMode = 'HORIZONTAL';
-  button.primaryAxisSizingMode = 'AUTO';
-  button.counterAxisSizingMode = 'AUTO';
-  button.paddingLeft = button.paddingRight = 18;
-  button.paddingTop = button.paddingBottom = 10;
-  button.cornerRadius = platform === 'android' ? 8 : 999;
-  button.fills = [VIEW_DEAL_GRADIENT];
-  button.appendChild(makeText('btnLabel', t('viewDeal', locale), FONT.bold, 13, BRAND.white));
-  priceRow.appendChild(button);
-
+  priceRow.appendChild(
+    makeText('priceSuffix', t('total', locale), FONT.regular, 13, BRAND.textSecondary),
+  );
   body.appendChild(priceRow);
-  card.appendChild(body);
 
+  // Divider
+  const divider = figma.createFrame();
+  divider.name = 'divider';
+  divider.layoutAlign = 'STRETCH';
+  divider.resize(width - spec.padding * 2, 1);
+  divider.fills = [{ type: 'SOLID', color: BRAND.border }];
+  body.appendChild(divider);
+
+  // Compare row: label + checkbox
+  const compareRow = hframe('compareRow', 0);
+  compareRow.primaryAxisAlignItems = 'SPACE_BETWEEN';
+  compareRow.counterAxisAlignItems = 'CENTER';
+  compareRow.layoutAlign = 'STRETCH';
+  compareRow.primaryAxisSizingMode = 'FIXED';
+  compareRow.resize(width - spec.padding * 2, 0);
+  compareRow.paddingTop = compareRow.paddingBottom = 4;
+
+  compareRow.appendChild(
+    makeText('compareLabel', 'Compare', FONT.regular, 14, BRAND.textPrimary),
+  );
+
+  const checkbox = figma.createFrame();
+  checkbox.name = 'checkbox';
+  checkbox.resize(22, 22);
+  checkbox.cornerRadius = platform === 'android' ? 2 : 4;
+  checkbox.strokes = [{ type: 'SOLID', color: BRAND.border }];
+  checkbox.strokeWeight = 1.5;
+  checkbox.fills = [];
+  compareRow.appendChild(checkbox);
+
+  body.appendChild(compareRow);
+
+  card.appendChild(body);
   return card;
 }
 
