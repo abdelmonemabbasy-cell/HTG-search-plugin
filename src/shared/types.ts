@@ -162,4 +162,35 @@ export interface Offer {
   reviewDetails?: ReviewDetails;
   /** Detail-page price breakdown (optional). */
   priceBreakdown?: PriceBreakdown;
+
+  /** Rooms list for the "Room information" section. */
+  rooms?: Array<{
+    kind: 'bedroom' | 'bathroom' | 'kitchen' | 'living';
+    label: string;
+    beds?: Array<{ type: string; count: number }>;
+    features?: string[];
+  }>;
+
+  /** Bullet-with-icon cards for the "Reasons to book" section. */
+  reasonsToBook?: Array<{
+    iconKey: string;
+    title: string;
+    description?: string;
+  }>;
+
+  /** Bullet list of house rules. */
+  houseRules?: Array<{
+    iconKey: string;
+    text: string;
+    allowed?: boolean;
+  }>;
+
+  /** Postal address + static-map URL for the Location section. */
+  address?: string;
+  mapImageUrl?: string;
+
+  /** Cancellation tier blocks. */
+  cancellationPolicy?: {
+    tiers: Array<{ label: string; description?: string; refundPct?: number }>;
+  };
 }

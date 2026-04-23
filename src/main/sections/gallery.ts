@@ -1,52 +1,87 @@
 import type { Offer } from '@shared/types';
 import type { Locale } from '@shared/locales';
+import type { Platform } from '@shared/platforms';
 import { t } from '@shared/locales';
 import { BRAND, FONT } from '../brand';
 import { applyImageFill, loadImageHash } from '../images';
-import { makeText, sectionFrame, SECTION_WIDTH, SECTION_PADDING } from './common';
-import { placeIcon } from '../icons';
-
-const HERO_WIDTH = SECTION_WIDTH - SECTION_PADDING * 2 - 8 - 320;
-const HERO_HEIGHT = 420;
-const THUMB_WIDTH = 320;
-const THUMB_ROW_H = 206;
+import { makeText, metrics, sectionFrame } from './common';
 
 /**
- * Gallery section. Hero image on the left, a 2×2 grid of thumbnails on
- * the right, and a "Show all N photos" pill on the hero. Adaptive:
- * 1 image → hero only, 2 → hero + one thumb, up to 5 thumbs shown.
+ * Gallery section. Web: hero + 2×2 thumbnail grid side-by-side.
+ * Mobile: full-width hero, then 2×2 thumbnail grid below.
  */
-export async function buildGallery(offer: Offer, locale: Locale): Promise<FrameNode> {
-  const section = sectionFrame(`HTG Section · Gallery · ${offer.title}`);
+export async function buildGallery(
+  offer: Offer,
+  locale: Locale,
+  platform: Platform = 'web',
+): Promise<FrameNode> {
+  const m = metrics(platform);
+  const section = sectionFrame(`HTG Section · Gallery · ${offer.title}`, platform);
   section.paddingTop = section.paddingBottom = 0;
   section.paddingLeft = section.paddingRight = 0;
-  section.itemSpacing = 0;
-  section.cornerRadius = 16;
+  section.itemSpacing = 8;
+  section.cornerRadius = platform === 'web' ? 16 : 0;
+  if (platform !== 'web') section.strokes = [];
 
-  const row = figma.createFrame();
-  row.name = 'galleryRow';
-  row.layoutMode = 'HORIZONTAL';
-  row.primaryAxisSizingMode = 'FIXED';
-  row.counterAxisSizingMode = 'AUTO';
-  row.resize(SECTION_WIDTH, 1);
-  row.itemSpacing = 8;
-  row.fills = [];
-  row.clipsContent = true;
+  const isWeb = platform === 'web';
+  const width = m.width;
+  const heroWidth = isWeb ? width - 8 - 320 : width;
+  const heroHeight = isWeb ? 420 : 280;
+  const thumbWidth = isWeb ? 320 : width;
+  const thumbRowH = isWeb ? 206 : 100;
 
-  // Hero
+  if (isWeb) {
+    const row = figma.createFrame();
+    row.name = 'galleryRow';
+    row.layoutMode = 'HORIZONTAL';
+    row.primaryAxisSizingMode = 'FIXED';
+    row.counterAxisSizingMode = 'AUTO';
+    row.resize(width, 1);
+    row.itemSpacing = 8;
+    row.fills = [];
+    row.clipsContent = true;
+
+    const hero = await makeHero(offer, locale, heroWidth, heroHeight);
+    row.appendChild(hero);
+
+    if (offer.images.length > 1) {
+      const thumbCol = await makeThumbs(offer, thumbWidth, thumbRowH);
+      row.appendChild(thumbCol);
+    }
+    section.appendChild(row);
+  } else {
+    const hero = await makeHero(offer, locale, width, heroHeight);
+    hero.layoutAlign = 'INHERIT';
+    section.appendChild(hero);
+
+    if (offer.images.length > 1) {
+      const thumbs = await makeThumbs(offer, width, thumbRowH);
+      thumbs.layoutAlign = 'INHERIT';
+      section.appendChild(thumbs);
+    }
+  }
+
+  return section;
+}
+
+async function makeHero(
+  offer: Offer,
+  locale: Locale,
+  width: number,
+  height: number,
+): Promise<FrameNode> {
   const hero = figma.createFrame();
   hero.name = '#image';
-  hero.resize(HERO_WIDTH, HERO_HEIGHT);
+  hero.resize(width, height);
   hero.fills = [{ type: 'SOLID', color: BRAND.surface }];
   hero.clipsContent = true;
-  hero.layoutAlign = 'INHERIT';
+
   const heroUrl = offer.images[0]?.url;
   if (heroUrl) {
     const hash = await loadImageHash(heroUrl);
     if (hash) applyImageFill(hero, hash);
   }
 
-  // Show-all-photos pill on hero
   if (offer.images.length > 1) {
     const pill = figma.createFrame();
     pill.name = 'showAllPhotos';
@@ -68,52 +103,52 @@ export async function buildGallery(offer: Offer, locale: Locale): Promise<FrameN
     );
     hero.appendChild(pill);
     pill.x = 16;
-    pill.y = HERO_HEIGHT - pill.height - 16;
+    pill.y = height - pill.height - 16;
   }
 
-  row.appendChild(hero);
+  return hero;
+}
 
-  // Thumbnails 2×2
-  if (offer.images.length > 1) {
-    const thumbCol = figma.createFrame();
-    thumbCol.name = 'thumbs';
-    thumbCol.layoutMode = 'VERTICAL';
-    thumbCol.primaryAxisSizingMode = 'AUTO';
-    thumbCol.counterAxisSizingMode = 'FIXED';
-    thumbCol.resize(THUMB_WIDTH, 1);
-    thumbCol.itemSpacing = 8;
-    thumbCol.fills = [];
+async function makeThumbs(
+  offer: Offer,
+  width: number,
+  rowHeight: number,
+): Promise<FrameNode> {
+  const col = figma.createFrame();
+  col.name = 'thumbs';
+  col.layoutMode = 'VERTICAL';
+  col.primaryAxisSizingMode = 'AUTO';
+  col.counterAxisSizingMode = 'FIXED';
+  col.resize(width, 1);
+  col.itemSpacing = 8;
+  col.fills = [];
 
-    const rowsNeeded = Math.min(2, Math.ceil((offer.images.length - 1) / 2));
-    let idx = 1;
-    for (let r = 0; r < rowsNeeded; r++) {
-      const rowThumbs = figma.createFrame();
-      rowThumbs.name = `thumbRow${r}`;
-      rowThumbs.layoutMode = 'HORIZONTAL';
-      rowThumbs.primaryAxisSizingMode = 'AUTO';
-      rowThumbs.counterAxisSizingMode = 'AUTO';
-      rowThumbs.itemSpacing = 8;
-      rowThumbs.fills = [];
+  const rowsNeeded = Math.min(2, Math.ceil((offer.images.length - 1) / 2));
+  let idx = 1;
+  for (let r = 0; r < rowsNeeded; r++) {
+    const rowThumbs = figma.createFrame();
+    rowThumbs.name = `thumbRow${r}`;
+    rowThumbs.layoutMode = 'HORIZONTAL';
+    rowThumbs.primaryAxisSizingMode = 'AUTO';
+    rowThumbs.counterAxisSizingMode = 'AUTO';
+    rowThumbs.itemSpacing = 8;
+    rowThumbs.fills = [];
 
-      for (let c = 0; c < 2 && idx < offer.images.length && idx < 5; c++) {
-        const thumb = figma.createFrame();
-        thumb.name = `thumb${idx}`;
-        thumb.resize((THUMB_WIDTH - 8) / 2, THUMB_ROW_H);
-        thumb.fills = [{ type: 'SOLID', color: BRAND.surface }];
-        thumb.clipsContent = true;
-        const url = offer.images[idx]?.url;
-        if (url) {
-          const hash = await loadImageHash(url);
-          if (hash) applyImageFill(thumb, hash);
-        }
-        rowThumbs.appendChild(thumb);
-        idx++;
+    for (let c = 0; c < 2 && idx < offer.images.length && idx < 5; c++) {
+      const thumb = figma.createFrame();
+      thumb.name = `thumb${idx}`;
+      thumb.resize((width - 8) / 2, rowHeight);
+      thumb.fills = [{ type: 'SOLID', color: BRAND.surface }];
+      thumb.clipsContent = true;
+      const url = offer.images[idx]?.url;
+      if (url) {
+        const hash = await loadImageHash(url);
+        if (hash) applyImageFill(thumb, hash);
       }
-      thumbCol.appendChild(rowThumbs);
+      rowThumbs.appendChild(thumb);
+      idx++;
     }
-    row.appendChild(thumbCol);
+    col.appendChild(rowThumbs);
   }
-
-  section.appendChild(row);
-  return section;
+  return col;
 }

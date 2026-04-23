@@ -66,6 +66,31 @@
       ],
       "total": 1039,
       "currency": "EUR"
+    },
+    "rooms": [
+      { "kind": "bedroom", "label": "Bedroom No. 1", "beds": [{ "type": "King bed", "count": 1 }] },
+      { "kind": "bedroom", "label": "Bedroom No. 2", "beds": [{ "type": "Queen bed", "count": 1 }, { "type": "Single sofa bed", "count": 1 }] },
+      { "kind": "bathroom", "label": "Bathroom", "features": ["Shower", "Toilet", "Hair dryer"] },
+      { "kind": "kitchen", "label": "Open-plan kitchen", "features": ["Dishwasher", "Oven", "Coffee machine"] }
+    ],
+    "reasonsToBook": [
+      { "iconKey": "check", "title": "Free cancellation", "description": "Cancel for free up to 7 days before arrival." },
+      { "iconKey": "wifi", "title": "Fast Wi-Fi included", "description": "Fibre internet throughout — ideal for remote workers." },
+      { "iconKey": "pets", "title": "Pet-friendly stay", "description": "Up to 2 dogs welcome at no extra charge." }
+    ],
+    "houseRules": [
+      { "iconKey": "smoking", "text": "Smoking not allowed", "allowed": false },
+      { "iconKey": "pets", "text": "Pets allowed (up to 2)", "allowed": true },
+      { "iconKey": "check", "text": "Check-in 3pm — 10pm" },
+      { "iconKey": "check", "text": "Check-out before 11am" }
+    ],
+    "address": "Stargarder Straße 12, 10437 Berlin, Germany",
+    "cancellationPolicy": {
+      "tiers": [
+        { "label": "Free cancellation", "description": "Full refund if cancelled up to 7 days before arrival.", "refundPct": 100 },
+        { "label": "50% refund", "description": "Cancel between 7 and 2 days before arrival for a 50% refund.", "refundPct": 50 },
+        { "label": "No refund", "description": "Cancellations within 48 hours of arrival are non-refundable.", "refundPct": 0 }
+      ]
     }
   },
   {
@@ -136,6 +161,35 @@
       ],
       "total": 5223,
       "currency": "EUR"
+    },
+    "rooms": [
+      { "kind": "bedroom", "label": "Master suite", "beds": [{ "type": "King bed", "count": 1 }], "features": ["Ensuite", "Sea view", "Balcony"] },
+      { "kind": "bedroom", "label": "Guest suite 1", "beds": [{ "type": "Queen bed", "count": 1 }], "features": ["Ensuite"] },
+      { "kind": "bedroom", "label": "Guest suite 2", "beds": [{ "type": "Queen bed", "count": 1 }], "features": ["Ensuite"] },
+      { "kind": "bedroom", "label": "Twin room", "beds": [{ "type": "Single bed", "count": 2 }] },
+      { "kind": "bedroom", "label": "Bunk room", "beds": [{ "type": "Bunk bed", "count": 1 }] },
+      { "kind": "bathroom", "label": "4 bathrooms", "features": ["All ensuite", "Rain showers", "Hair dryers"] },
+      { "kind": "kitchen", "label": "Indoor + outdoor kitchen", "features": ["Wood-fired oven", "Full-size fridge"] }
+    ],
+    "reasonsToBook": [
+      { "iconKey": "check", "title": "Direct beach access", "description": "Private pathway to a quiet cove with turquoise water." },
+      { "iconKey": "check", "title": "Infinity pool", "description": "14m heated pool with uninterrupted Mediterranean views." },
+      { "iconKey": "check", "title": "Multi-family friendly", "description": "Sleeps 10 across 5 ensuite bedrooms." }
+    ],
+    "houseRules": [
+      { "iconKey": "smoking", "text": "Smoking on terrace only" },
+      { "iconKey": "pets", "text": "Pets not allowed", "allowed": false },
+      { "iconKey": "check", "text": "Check-in 4pm onwards" },
+      { "iconKey": "check", "text": "Check-out before 10am" },
+      { "iconKey": "check", "text": "Events permitted — max 25 guests" }
+    ],
+    "address": "Cala d'Or Beachfront, 07660 Cala d'Or, Mallorca, Spain",
+    "cancellationPolicy": {
+      "tiers": [
+        { "label": "Free cancellation", "description": "Full refund if cancelled up to 14 days before arrival.", "refundPct": 100 },
+        { "label": "50% refund", "description": "Between 14 and 7 days before arrival.", "refundPct": 50 },
+        { "label": "No refund", "description": "Cancellations within 7 days of arrival are non-refundable.", "refundPct": 0 }
+      ]
     }
   },
   {
@@ -415,6 +469,30 @@
       ],
       "total": 95,
       "currency": "EUR"
+    },
+    "rooms": [
+      { "kind": "bedroom", "label": "Sleeping pod", "beds": [{ "type": "Queen bed", "count": 1 }], "features": ["Sound-isolated", "Climate control", "USB charging"] },
+      { "kind": "bathroom", "label": "Shared bathroom", "features": ["Rain shower", "Toiletries included", "Hair dryer"] },
+      { "kind": "living", "label": "Co-working lounge", "features": ["Fibre Wi-Fi", "Free coffee", "Quiet hours 10pm-7am"] }
+    ],
+    "reasonsToBook": [
+      { "iconKey": "check", "title": "Breakfast included", "description": "Self-service bar with Dutch pastries, cheese, and coffee." },
+      { "iconKey": "check", "title": "Rooftop terrace", "description": "Open 7am-midnight with canal views." },
+      { "iconKey": "pets", "title": "Pet-friendly pods", "description": "Small pets welcome at no extra charge." }
+    ],
+    "houseRules": [
+      { "iconKey": "smoking", "text": "Smoking allowed in designated outdoor area" },
+      { "iconKey": "pets", "text": "Pets allowed", "allowed": true },
+      { "iconKey": "check", "text": "Check-in 2pm — midnight" },
+      { "iconKey": "check", "text": "Check-out before 11am" },
+      { "iconKey": "check", "text": "Quiet hours 10pm — 7am" }
+    ],
+    "address": "Albert Cuypstraat 128, 1072 EB Amsterdam, Netherlands",
+    "cancellationPolicy": {
+      "tiers": [
+        { "label": "Free cancellation", "description": "Full refund if cancelled up to 24 hours before arrival.", "refundPct": 100 },
+        { "label": "No refund", "description": "Cancellations within 24 hours of arrival are non-refundable.", "refundPct": 0 }
+      ]
     }
   }
 ]

@@ -1,15 +1,15 @@
 import type { Offer } from '@shared/types';
 import type { Locale } from '@shared/locales';
+import type { Platform } from '@shared/platforms';
 import { t } from '@shared/locales';
 import { BRAND, FONT, VIEW_DEAL_GRADIENT } from '../brand';
 import {
   hframe,
   makeText,
+  metrics,
   sectionFrame,
   sectionHeading,
   vframe,
-  SECTION_WIDTH,
-  SECTION_PADDING,
 } from './common';
 
 const BAR_WIDTH = 160;
@@ -54,9 +54,14 @@ function ratingBar(label: string, score: number): FrameNode {
  * location, value, communication) with gradient progress bars on the right,
  * and up to 3 individual review cards below.
  */
-export function buildReviews(offer: Offer, locale: Locale): FrameNode {
-  const section = sectionFrame(`HTG Section · Reviews · ${offer.title}`);
-  section.appendChild(sectionHeading(t('reviewsHeader', locale)));
+export function buildReviews(
+  offer: Offer,
+  locale: Locale,
+  platform: Platform = 'web',
+): FrameNode {
+  const m = metrics(platform);
+  const section = sectionFrame(`HTG Section · Reviews · ${offer.title}`, platform);
+  section.appendChild(sectionHeading(t('reviewsHeader', locale), platform));
 
   const details = offer.reviewDetails;
   if (!details && !offer.rating) {
@@ -74,16 +79,30 @@ export function buildReviews(offer: Offer, locale: Locale): FrameNode {
   }
 
   // Header strip: overall score + count + sub-ratings
-  const headerStrip = hframe('headerStrip', 40);
+  const headerStrip = platform === 'web'
+    ? hframe('headerStrip', 40)
+    : (() => {
+        const v = vframe('headerStrip', 16);
+        v.layoutAlign = 'STRETCH';
+        return v;
+      })();
   headerStrip.counterAxisAlignItems = 'MIN';
   headerStrip.layoutAlign = 'STRETCH';
 
-  const overallBlock = vframe('overallBlock', 4);
+  const overallBlock = vframe('overallBlock', 2);
   const overallValue = details?.overall ?? offer.rating?.average ?? 0;
-  overallBlock.appendChild(
-    makeText('overallHuge', overallValue.toFixed(1), FONT.bold, 40, BRAND.textPrimary),
+  const verdict =
+    overallValue >= 4.7 ? t('ratingOutstanding', locale)
+      : overallValue >= 4.3 ? t('ratingExcellent', locale)
+        : t('ratingGood', locale);
+  const headRow = hframe('headRow', 10);
+  headRow.counterAxisAlignItems = 'CENTER';
+  headRow.appendChild(
+    makeText('overallHuge', overallValue.toFixed(1), FONT.bold, platform === 'web' ? 40 : 32, BRAND.textPrimary),
   );
-  overallBlock.appendChild(
+  const verdictCol = vframe('verdictCol', 2);
+  verdictCol.appendChild(makeText('verdict', verdict, FONT.bold, 14, BRAND.textPrimary));
+  verdictCol.appendChild(
     makeText(
       'overallLabel',
       `${details?.count ?? offer.rating?.count ?? 0} ${t('reviews', locale)}`,
@@ -92,6 +111,8 @@ export function buildReviews(offer: Offer, locale: Locale): FrameNode {
       BRAND.textSecondary,
     ),
   );
+  headRow.appendChild(verdictCol);
+  overallBlock.appendChild(headRow);
   headerStrip.appendChild(overallBlock);
 
   if (details?.subRatings) {
@@ -112,17 +133,17 @@ export function buildReviews(offer: Offer, locale: Locale): FrameNode {
 
   // Individual reviews
   if (details?.items?.length) {
+    const innerWidth = m.width - m.padding * 2;
     const reviewsRow = figma.createFrame();
     reviewsRow.name = 'reviewsRow';
-    reviewsRow.layoutMode = 'HORIZONTAL';
+    reviewsRow.layoutMode = platform === 'web' ? 'HORIZONTAL' : 'VERTICAL';
     reviewsRow.primaryAxisSizingMode = 'FIXED';
     reviewsRow.counterAxisSizingMode = 'AUTO';
-    reviewsRow.resize(SECTION_WIDTH - SECTION_PADDING * 2, 1);
-    reviewsRow.itemSpacing = 16;
+    reviewsRow.resize(innerWidth, 1);
+    reviewsRow.itemSpacing = platform === 'web' ? 16 : 12;
     reviewsRow.fills = [];
 
-    const innerWidth = SECTION_WIDTH - SECTION_PADDING * 2;
-    const cardWidth = (innerWidth - 32) / 3;
+    const cardWidth = platform === 'web' ? (innerWidth - 32) / 3 : innerWidth;
 
     for (const item of details.items.slice(0, 3)) {
       const card = vframe(`review_${item.author}`, 8);

@@ -1,15 +1,15 @@
 import type { Amenity, AmenityCategory, Offer } from '@shared/types';
 import type { Locale } from '@shared/locales';
+import type { Platform } from '@shared/platforms';
 import { t } from '@shared/locales';
 import { BRAND, FONT } from '../brand';
 import {
   hframe,
   makeText,
+  metrics,
   sectionFrame,
   sectionHeading,
   vframe,
-  SECTION_WIDTH,
-  SECTION_PADDING,
 } from './common';
 import { placeIcon, type IconName } from '../icons';
 
@@ -53,13 +53,18 @@ function prettyAmenity(a: Amenity): string {
  * is provided, otherwise falls back to a flat list. Each amenity = icon +
  * label on one row. Categories laid out in 2 columns.
  */
-export function buildAmenities(offer: Offer, locale: Locale): FrameNode {
-  const section = sectionFrame(`HTG Section · Amenities · ${offer.title}`);
+export function buildAmenities(
+  offer: Offer,
+  locale: Locale,
+  platform: Platform = 'web',
+): FrameNode {
+  const m = metrics(platform);
+  const section = sectionFrame(`HTG Section · Amenities · ${offer.title}`, platform);
 
-  section.appendChild(sectionHeading(t('amenities', locale)));
+  section.appendChild(sectionHeading(t('amenities', locale), platform));
 
   const grouped = offer.amenitiesByCategory;
-  const innerWidth = SECTION_WIDTH - SECTION_PADDING * 2;
+  const innerWidth = m.width - m.padding * 2;
 
   const grid = figma.createFrame();
   grid.name = 'amenitiesGrid';

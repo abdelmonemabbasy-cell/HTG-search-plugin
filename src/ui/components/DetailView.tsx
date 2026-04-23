@@ -18,17 +18,49 @@ const LABELS: Record<SectionKind, { label: string; description: string }> = {
     label: 'Gallery',
     description: 'Hero + thumbnail grid',
   },
-  amenities: {
-    label: 'Amenities',
-    description: 'Grouped icon + label grid',
+  titleHeader: {
+    label: 'Title header',
+    description: 'Badges + title + rating + hero price',
+  },
+  quickFacts: {
+    label: 'Quick facts',
+    description: '2-column icon grid of key stats',
+  },
+  reasonsToBook: {
+    label: 'Reasons to book',
+    description: '3-item icon + title + description list',
   },
   reviews: {
-    label: 'Reviews',
-    description: 'Overall score + sub-ratings + review cards',
+    label: 'Rating breakdown',
+    description: 'Overall + sub-ratings + 3 review cards',
+  },
+  amenities: {
+    label: 'Amenities',
+    description: 'What this stay offers — grouped icons',
+  },
+  roomInformation: {
+    label: 'Room information',
+    description: 'Bedroom/bathroom cards + beds',
+  },
+  description: {
+    label: 'Description',
+    description: 'About paragraph + highlights + See more',
+  },
+  houseRules: {
+    label: 'House rules',
+    description: 'Icon + rule bullet list',
+  },
+  location: {
+    label: 'Location',
+    description: 'Map tile + address block',
   },
   priceBreakdown: {
-    label: 'Price breakdown',
-    description: 'Line items, total, CTA',
+    label: 'Cost breakdown',
+    description: 'Line items, total, View deal CTA',
+  },
+  cancellationPolicy: {
+    label: 'Cancellation policy',
+    description: 'Refund tiers with colored rails',
   },
 };
 
@@ -116,11 +148,27 @@ function sectionHasData(kind: SectionKind, offer: Offer): boolean {
   switch (kind) {
     case 'gallery':
       return offer.images.length > 0;
-    case 'amenities':
-      return offer.amenities.length > 0;
+    case 'titleHeader':
+      return true;
+    case 'quickFacts':
+      return true;
+    case 'reasonsToBook':
+      return true;
     case 'reviews':
       return !!offer.reviewDetails || !!offer.rating;
+    case 'amenities':
+      return offer.amenities.length > 0;
+    case 'roomInformation':
+      return true;
+    case 'description':
+      return !!offer.fullDescription || !!offer.shortDescription;
+    case 'houseRules':
+      return true;
+    case 'location':
+      return true;
     case 'priceBreakdown':
       return !!offer.priceBreakdown || !!offer.price;
+    case 'cancellationPolicy':
+      return true;
   }
 }

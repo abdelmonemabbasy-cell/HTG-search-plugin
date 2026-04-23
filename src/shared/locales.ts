@@ -55,6 +55,20 @@ export type StringKey =
   | 'ratingValue'
   | 'ratingCommunication'
   | 'ratingOverall'
+  | 'ratingOutstanding'
+  | 'ratingExcellent'
+  | 'ratingGood'
+  | 'quickFacts'
+  | 'reasonsToBook'
+  | 'roomInformation'
+  | 'seeAllRooms'
+  | 'seeMore'
+  | 'houseRules'
+  | 'location'
+  | 'address'
+  | 'cancellationPolicy'
+  | 'perNightHero'
+  | 'total'
   | 'hotel'
   | 'apartment'
   | 'villa'
@@ -69,6 +83,19 @@ export type StringKey =
 
 export const STRINGS: Record<Locale, Record<StringKey, string>> = {
   en: {
+    ratingOutstanding: 'Outstanding',
+    ratingExcellent: 'Excellent',
+    ratingGood: 'Good',
+    quickFacts: 'Quick facts',
+    reasonsToBook: 'Reasons to book',
+    roomInformation: 'Room information',
+    seeAllRooms: 'See all rooms',
+    seeMore: 'See more',
+    houseRules: 'House rules',
+    location: 'Location',
+    address: 'Address',
+    cancellationPolicy: 'Cancellation policy',
+    perNightHero: '/ night',
     viewDeal: 'View deal',
     forNight: 'for {n} night, incl. fees',
     forNights: 'for {n} nights, incl. fees',
@@ -117,6 +144,19 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'House',
   },
   de: {
+    ratingOutstanding: 'Hervorragend',
+    ratingExcellent: 'Sehr gut',
+    ratingGood: 'Gut',
+    quickFacts: 'Auf einen Blick',
+    reasonsToBook: 'Gründe zu buchen',
+    roomInformation: 'Zimmerinformation',
+    seeAllRooms: 'Alle Zimmer anzeigen',
+    seeMore: 'Mehr anzeigen',
+    houseRules: 'Hausregeln',
+    location: 'Lage',
+    address: 'Adresse',
+    cancellationPolicy: 'Stornierungsbedingungen',
+    perNightHero: '/ Nacht',
     viewDeal: 'Angebot ansehen',
     forNight: 'für {n} Nacht, inkl. Gebühren',
     forNights: 'für {n} Nächte, inkl. Gebühren',
@@ -165,6 +205,19 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'Haus',
   },
   es: {
+    ratingOutstanding: 'Excepcional',
+    ratingExcellent: 'Excelente',
+    ratingGood: 'Bien',
+    quickFacts: 'Datos clave',
+    reasonsToBook: 'Razones para reservar',
+    roomInformation: 'Información de las habitaciones',
+    seeAllRooms: 'Ver todas las habitaciones',
+    seeMore: 'Ver más',
+    houseRules: 'Normas de la casa',
+    location: 'Ubicación',
+    address: 'Dirección',
+    cancellationPolicy: 'Política de cancelación',
+    perNightHero: '/ noche',
     viewDeal: 'Ver oferta',
     forNight: 'por {n} noche, tasas incluidas',
     forNights: 'por {n} noches, tasas incluidas',
@@ -213,6 +266,19 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'Casa',
   },
   fr: {
+    ratingOutstanding: 'Exceptionnel',
+    ratingExcellent: 'Excellent',
+    ratingGood: 'Bien',
+    quickFacts: 'En bref',
+    reasonsToBook: 'Raisons de réserver',
+    roomInformation: 'Informations sur les chambres',
+    seeAllRooms: 'Voir toutes les chambres',
+    seeMore: 'Voir plus',
+    houseRules: 'Règlement intérieur',
+    location: 'Emplacement',
+    address: 'Adresse',
+    cancellationPolicy: "Conditions d'annulation",
+    perNightHero: '/ nuit',
     viewDeal: "Voir l'offre",
     forNight: 'pour {n} nuit, frais inclus',
     forNights: 'pour {n} nuits, frais inclus',

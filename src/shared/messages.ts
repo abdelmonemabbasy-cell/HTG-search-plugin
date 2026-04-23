@@ -8,13 +8,33 @@ export type InsertMode = 'single' | 'list' | 'grid';
 export type SortKey = 'default' | 'priceAsc' | 'priceDesc' | 'ratingDesc' | 'newest';
 
 /** Keys of the detail-page sections the plugin can render. */
-export type SectionKind = 'gallery' | 'amenities' | 'reviews' | 'priceBreakdown';
+export type SectionKind =
+  | 'gallery'
+  | 'titleHeader'
+  | 'quickFacts'
+  | 'reasonsToBook'
+  | 'reviews'
+  | 'amenities'
+  | 'roomInformation'
+  | 'description'
+  | 'houseRules'
+  | 'location'
+  | 'priceBreakdown'
+  | 'cancellationPolicy';
 
 export const SECTION_KINDS: SectionKind[] = [
   'gallery',
-  'amenities',
+  'titleHeader',
+  'quickFacts',
+  'reasonsToBook',
   'reviews',
+  'amenities',
+  'roomInformation',
+  'description',
+  'houseRules',
+  'location',
   'priceBreakdown',
+  'cancellationPolicy',
 ];
 
 export interface UiFilters {

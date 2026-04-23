@@ -164,8 +164,12 @@ export function App(props: LoadedPayload) {
     setSearch('');
     setSort('default');
   };
-  const selectAllSections = () =>
-    setSelectedSections(new Set<SectionKind>(['gallery', 'amenities', 'reviews', 'priceBreakdown']));
+  const selectAllSections = () => {
+    const available = (['gallery', 'titleHeader', 'quickFacts', 'reasonsToBook', 'reviews', 'amenities', 'roomInformation', 'description', 'houseRules', 'location', 'priceBreakdown', 'cancellationPolicy'] as SectionKind[]).filter(
+      (k) => sectionHasData(k, offers.find((o) => o.id === detailOfferId)),
+    );
+    setSelectedSections(new Set<SectionKind>(available));
+  };
   const clearAllSections = () => setSelectedSections(new Set());
 
   useEffect(() => {
@@ -384,6 +388,24 @@ function hintFor(mode: InsertMode): string {
   if (mode === 'single') return 'Click a property to select';
   if (mode === 'list') return 'Pick multiple to stack as a list';
   return 'Pick multiple to arrange as a grid';
+}
+
+function sectionHasData(kind: SectionKind, offer: Offer | undefined): boolean {
+  if (!offer) return false;
+  switch (kind) {
+    case 'gallery':
+      return offer.images.length > 0;
+    case 'reviews':
+      return !!offer.reviewDetails || !!offer.rating;
+    case 'amenities':
+      return offer.amenities.length > 0;
+    case 'description':
+      return !!offer.fullDescription || !!offer.shortDescription;
+    case 'priceBreakdown':
+      return !!offer.priceBreakdown || !!offer.price;
+    default:
+      return true;
+  }
 }
 
 function sortOffers(offers: Offer[], key: SortKey): Offer[] {

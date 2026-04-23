@@ -5,6 +5,71 @@ in ISO-8601 (YYYY-MM-DD).
 
 ## [Unreleased]
 
+### 0.5.0 — 2026-04-23 — Full mobile detail page (12 sections, platform-aware)
+
+Inspired by the iOS details-scroll frame supplied in Figma. Expands
+Phase A from 4 sections to 12 and makes every section builder
+platform-aware so iOS and Android use mobile layouts while Web keeps
+the existing card treatment.
+
+**New sections** (each built as its own module under `src/main/sections/`):
+- `titleHeader` — badges row + title + rating line + location + hero
+  price (with strike-through original when discounted).
+- `quickFacts` — 2-column icon+label grid (bedrooms / beds / bathrooms /
+  guests / kitchen / Wi-Fi / pet-friendly / parking — adaptive to the
+  offer's amenities).
+- `reasonsToBook` — 3 rounded icon tiles + title + description list.
+- `roomInformation` — one rounded card per room with bed-type details
+  and an outlined **See all rooms** button.
+- `description` — paragraph + bullet highlights + violet **See more** link.
+- `houseRules` — icon + rule list (coral tint on disallowed items).
+- `location` — static-map tile + centred violet pin + address block.
+- `cancellationPolicy` — stacked refund-tier cards with a colored left
+  rail (green 100% → violet 50% → coral 0%).
+
+**Refined sections**
+- `gallery` — web keeps 880×420 hero + 2×2 thumbs side-by-side; mobile
+  stacks hero 375×280 with a 2×2 thumb grid beneath.
+- `reviews` — overall score now shows a verdict label ("Outstanding" /
+  "Excellent" / "Good") alongside. Mobile stacks sub-ratings below
+  the overall block and stacks review cards vertically.
+- `amenities` + `priceBreakdown` — accept `Platform`, reflow inner
+  widths + paddings to match iOS/Android metrics.
+
+**Platform-aware section metrics** (`src/main/sections/common.ts`):
+- web: 880 wide, 24 px padding, 16 px radius, 1 px stroke
+- ios: 375 wide, 20 px padding, edge-to-edge (no radius, no stroke)
+- android: 360 wide, 20 px padding, edge-to-edge
+
+**Data model additions**
+- `Offer.rooms` — rooms array for `roomInformation`
+- `Offer.reasonsToBook` — reasons for the homonymous section
+- `Offer.houseRules` — rules (with `allowed` flag for red/green tint)
+- `Offer.address` — postal address for `location`
+- `Offer.mapImageUrl` — optional static-map URL
+- `Offer.cancellationPolicy` — refund tiers
+
+Seeded fully on the 3 enriched offers (Berlin apartment, Mallorca villa,
+Amsterdam capsule hotel). The other 7 offers fall back to sensible
+defaults (generic reasons, derived rooms from capacity, default rules).
+
+**Locale expansion**
+- New string keys for section headings + verdict labels +
+  "Quick facts", "Reasons to book", "Room information",
+  "See all rooms", "See more", "House rules", "Location",
+  "Address", "Cancellation policy", "Outstanding" / "Excellent" /
+  "Good", "/ night" (hero) — in EN/DE/ES/FR.
+
+**UI**
+- Detail view section grid now lists all 12 sections. Each tile
+  still shows adaptively — disabled if the offer has no data
+  (e.g. Reviews is disabled for offers without `reviewDetails`).
+- Select-all now only selects sections that actually have data.
+
+**New icons**
+- `pin`, `check`, `heartFilled` — added earlier in v0.4, now used
+  across multiple sections.
+
 ### 0.4.0 — 2026-04-23 — iOS SERP card redesign + Android variant
 
 **Changed — iOS card**

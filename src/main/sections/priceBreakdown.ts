@@ -1,16 +1,16 @@
 import type { Offer } from '@shared/types';
 import type { Locale } from '@shared/locales';
+import type { Platform } from '@shared/platforms';
 import { t, type StringKey } from '@shared/locales';
 import { formatPrice } from '@shared/format';
 import { BRAND, FONT, VIEW_DEAL_GRADIENT } from '../brand';
 import {
   hframe,
   makeText,
+  metrics,
   sectionFrame,
   sectionHeading,
   vframe,
-  SECTION_WIDTH,
-  SECTION_PADDING,
 } from './common';
 
 /**
@@ -19,9 +19,14 @@ import {
  * offer doesn't have `priceBreakdown`, we synthesise a default row from
  * `offer.price`.
  */
-export function buildPriceBreakdown(offer: Offer, locale: Locale): FrameNode {
-  const section = sectionFrame(`HTG Section · Price · ${offer.title}`);
-  section.appendChild(sectionHeading(t('priceBreakdown', locale)));
+export function buildPriceBreakdown(
+  offer: Offer,
+  locale: Locale,
+  platform: Platform = 'web',
+): FrameNode {
+  const m = metrics(platform);
+  const section = sectionFrame(`HTG Section · Price · ${offer.title}`, platform);
+  section.appendChild(sectionHeading(t('priceBreakdown', locale), platform));
 
   const breakdown = offer.priceBreakdown ?? {
     lineItems: [
@@ -36,7 +41,7 @@ export function buildPriceBreakdown(offer: Offer, locale: Locale): FrameNode {
     currency: offer.price.currency,
   };
 
-  const innerWidth = SECTION_WIDTH - SECTION_PADDING * 2;
+  const innerWidth = m.width - m.padding * 2;
 
   for (const item of breakdown.lineItems) {
     const row = hframe(`line_${item.key}`, 8);
