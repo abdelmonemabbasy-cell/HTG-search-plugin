@@ -2,6 +2,8 @@ import { h } from 'preact';
 import type { Offer } from '@shared/types';
 import type { SectionKind } from '@shared/messages';
 import { SECTION_KINDS } from '@shared/messages';
+import type { Locale, StringKey } from '@shared/locales';
+import { t } from '@shared/locales';
 import styles from '../styles.css';
 
 interface Props {
@@ -11,57 +13,22 @@ interface Props {
   onBack: () => void;
   onSelectAll: () => void;
   onClear: () => void;
+  locale: Locale;
 }
 
-const LABELS: Record<SectionKind, { label: string; description: string }> = {
-  gallery: {
-    label: 'Gallery',
-    description: 'Hero + thumbnail grid',
-  },
-  titleHeader: {
-    label: 'Title header',
-    description: 'Badges + title + rating + hero price',
-  },
-  quickFacts: {
-    label: 'Quick facts',
-    description: '2-column icon grid of key stats',
-  },
-  reasonsToBook: {
-    label: 'Reasons to book',
-    description: '3-item icon + title + description list',
-  },
-  reviews: {
-    label: 'Rating breakdown',
-    description: 'Overall + sub-ratings + 3 review cards',
-  },
-  amenities: {
-    label: 'Amenities',
-    description: 'What this stay offers — grouped icons',
-  },
-  roomInformation: {
-    label: 'Room information',
-    description: 'Bedroom/bathroom cards + beds',
-  },
-  description: {
-    label: 'Description',
-    description: 'About paragraph + highlights + See more',
-  },
-  houseRules: {
-    label: 'House rules',
-    description: 'Icon + rule bullet list',
-  },
-  location: {
-    label: 'Location',
-    description: 'Map tile + address block',
-  },
-  priceBreakdown: {
-    label: 'Cost breakdown',
-    description: 'Line items, total, View deal CTA',
-  },
-  cancellationPolicy: {
-    label: 'Cancellation policy',
-    description: 'Refund tiers with colored rails',
-  },
+const TILE_KEYS: Record<SectionKind, { label: StringKey; desc: StringKey }> = {
+  gallery: { label: 'uiTileGallery', desc: 'uiTileGalleryDesc' },
+  titleHeader: { label: 'uiTileTitleHeader', desc: 'uiTileTitleHeaderDesc' },
+  quickFacts: { label: 'uiTileQuickFacts', desc: 'uiTileQuickFactsDesc' },
+  reasonsToBook: { label: 'uiTileReasonsToBook', desc: 'uiTileReasonsToBookDesc' },
+  reviews: { label: 'uiTileReviews', desc: 'uiTileReviewsDesc' },
+  amenities: { label: 'uiTileAmenities', desc: 'uiTileAmenitiesDesc' },
+  roomInformation: { label: 'uiTileRoomInformation', desc: 'uiTileRoomInformationDesc' },
+  description: { label: 'uiTileDescription', desc: 'uiTileDescriptionDesc' },
+  houseRules: { label: 'uiTileHouseRules', desc: 'uiTileHouseRulesDesc' },
+  location: { label: 'uiTileLocation', desc: 'uiTileLocationDesc' },
+  priceBreakdown: { label: 'uiTilePriceBreakdown', desc: 'uiTilePriceBreakdownDesc' },
+  cancellationPolicy: { label: 'uiTileCancellationPolicy', desc: 'uiTileCancellationPolicyDesc' },
 };
 
 export function DetailView({
@@ -71,13 +38,14 @@ export function DetailView({
   onBack,
   onSelectAll,
   onClear,
+  locale,
 }: Props) {
   const heroUrl = offer.images[0]?.url;
   return (
     <div class={styles.detail}>
       <div class={styles.detailBreadcrumb}>
         <button class={styles.detailBackBtn} onClick={onBack}>
-          ← Properties
+          ← {t('uiBreadcrumbProperties', locale)}
         </button>
       </div>
 
@@ -87,7 +55,7 @@ export function DetailView({
       >
         <div class={styles.detailHeroOverlay}>
           <div class={styles.detailCategory}>
-            {offer.categoryLabel ?? offer.propertyType}
+            {offer.categoryLabel ?? t(offer.propertyType as StringKey, locale)}
           </div>
           <div class={styles.detailTitle}>{offer.title}</div>
           <div class={styles.detailLocation}>
@@ -99,28 +67,28 @@ export function DetailView({
       </div>
 
       <div class={styles.detailSectionActions}>
-        <span class={styles.detailSectionHeading}>Sections to insert</span>
+        <span class={styles.detailSectionHeading}>{t('uiSectionsToInsert', locale)}</span>
         <div class={styles.detailSectionActionsBtns}>
           <button
             class={styles.bulkBarBtn}
             onClick={onSelectAll}
             disabled={selected.size === SECTION_KINDS.length}
           >
-            Select all
+            {t('uiSelectAll', locale)}
           </button>
           <button
             class={styles.bulkBarBtnGhost}
             onClick={onClear}
             disabled={selected.size === 0}
           >
-            Clear
+            {t('uiClear', locale)}
           </button>
         </div>
       </div>
 
       <div class={styles.sectionGrid}>
         {SECTION_KINDS.map((kind) => {
-          const info = LABELS[kind];
+          const keys = TILE_KEYS[kind];
           const isSelected = selected.has(kind);
           const hasData = sectionHasData(kind, offer);
           return (
@@ -129,11 +97,11 @@ export function DetailView({
               class={`${styles.sectionTile} ${isSelected ? styles.sectionTileSelected : ''} ${!hasData ? styles.sectionTileDisabled : ''}`}
               onClick={() => hasData && onToggle(kind)}
               disabled={!hasData}
-              title={!hasData ? 'This offer has no data for this section' : undefined}
+              title={!hasData ? t('uiTileNotAvailable', locale) : undefined}
             >
-              <div class={styles.sectionTileLabel}>{info.label}</div>
+              <div class={styles.sectionTileLabel}>{t(keys.label, locale)}</div>
               <div class={styles.sectionTileDescription}>
-                {hasData ? info.description : 'Not available for this offer'}
+                {hasData ? t(keys.desc, locale) : t('uiTileNotAvailable', locale)}
               </div>
               {isSelected && <span class={styles.sectionTileCheck}>✓</span>}
             </button>

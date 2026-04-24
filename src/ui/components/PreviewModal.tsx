@@ -1,6 +1,8 @@
 import { h } from 'preact';
 import styles from '../styles.css';
 import type { Offer } from '@shared/types';
+import type { Locale } from '@shared/locales';
+import { t } from '@shared/locales';
 import { formatPrice } from '@shared/format';
 
 interface Props {
@@ -8,9 +10,10 @@ interface Props {
   onClose: () => void;
   onInsert: () => void;
   onOpenDetail: () => void;
+  locale: Locale;
 }
 
-export function PreviewModal({ offer, onClose, onInsert, onOpenDetail }: Props) {
+export function PreviewModal({ offer, onClose, onInsert, onOpenDetail, locale }: Props) {
   return (
     <div class={styles.modalOverlay} onClick={onClose}>
       <div class={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -30,22 +33,24 @@ export function PreviewModal({ offer, onClose, onInsert, onOpenDetail }: Props) 
           <div class={styles.modalStatsRow}>
             <div class={styles.modalStat}>
               <div class={styles.modalStatValue}>{offer.capacity.guests}</div>
-              <div class={styles.modalStatLabel}>Guests</div>
+              <div class={styles.modalStatLabel}>{t('uiLabelGuests', locale)}</div>
             </div>
             <div class={styles.modalStat}>
               <div class={styles.modalStatValue}>{offer.capacity.bedrooms}</div>
-              <div class={styles.modalStatLabel}>Bedrooms</div>
+              <div class={styles.modalStatLabel}>{t('uiLabelBedrooms', locale)}</div>
             </div>
             <div class={styles.modalStat}>
               <div class={styles.modalStatValue}>{offer.capacity.bathrooms}</div>
-              <div class={styles.modalStatLabel}>Baths</div>
+              <div class={styles.modalStatLabel}>{t('uiLabelBaths', locale)}</div>
             </div>
             <div class={styles.modalStat}>
               <div class={styles.modalStatValue}>
                 {offer.rating ? offer.rating.average.toFixed(1) : '—'}
               </div>
               <div class={styles.modalStatLabel}>
-                {offer.rating ? `${offer.rating.count} reviews` : 'New'}
+                {offer.rating
+                  ? t('uiNReviewsShort', locale, { n: offer.rating.count })
+                  : t('uiNewShort', locale)}
               </div>
             </div>
           </div>
@@ -55,7 +60,7 @@ export function PreviewModal({ offer, onClose, onInsert, onOpenDetail }: Props) 
           )}
 
           <div class={styles.modalSection}>
-            <div class={styles.modalSectionLabel}>Amenities</div>
+            <div class={styles.modalSectionLabel}>{t('amenities', locale)}</div>
             <div class={styles.amenityGrid}>
               {offer.amenities.map((a) => (
                 <span key={a} class={styles.amenityChip}>
@@ -69,17 +74,20 @@ export function PreviewModal({ offer, onClose, onInsert, onOpenDetail }: Props) 
             <div class={styles.modalPriceRow}>
               {offer.discount && (
                 <span class={styles.modalPriceOriginal}>
-                  {formatPrice(offer.discount.originalPerNight, offer.price.currency)}
+                  {formatPrice(offer.discount.originalPerNight, offer.price.currency, locale)}
                 </span>
               )}
               <span class={styles.modalPrice}>
-                {formatPrice(offer.price.perNight, offer.price.currency)}
+                {formatPrice(offer.price.perNight, offer.price.currency, locale)}
               </span>
-              <span class={styles.modalPriceSuffix}>/ night</span>
+              <span class={styles.modalPriceSuffix}>{t('uiPerNightSlash', locale)}</span>
             </div>
             <div class={styles.modalProvider}>
-              by {offer.provider.name} · {offer.price.nights} nights:{' '}
-              {formatPrice(offer.price.total, offer.price.currency)} total
+              {t('uiByProvider', locale, { name: offer.provider.name })} ·{' '}
+              {t('uiNightsTotalSuffix', locale, {
+                n: offer.price.nights,
+                total: formatPrice(offer.price.total, offer.price.currency, locale),
+              })}
             </div>
           </div>
         </div>
@@ -88,13 +96,13 @@ export function PreviewModal({ offer, onClose, onInsert, onOpenDetail }: Props) 
             class={`${styles.btn} ${styles.btnGhost}`}
             onClick={onOpenDetail}
           >
-            Open details →
+            {t('uiOpenDetails', locale)}
           </button>
           <button
             class={`${styles.btn} ${styles.btnPrimary} ${styles.modalActionsBtn}`}
             onClick={onInsert}
           >
-            Insert card
+            {t('uiInsertCard', locale)}
           </button>
         </div>
       </div>

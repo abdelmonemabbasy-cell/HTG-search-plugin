@@ -1,6 +1,8 @@
 import { h } from 'preact';
 import styles from '../styles.css';
 import type { Offer } from '@shared/types';
+import type { Locale } from '@shared/locales';
+import { t } from '@shared/locales';
 import { formatPrice } from '@shared/format';
 
 interface Props {
@@ -9,9 +11,10 @@ interface Props {
   onToggle: () => void;
   onPreview: () => void;
   onOpen: () => void;
+  locale: Locale;
 }
 
-export function ProductTile({ offer, selected, onToggle, onPreview, onOpen }: Props) {
+export function ProductTile({ offer, selected, onToggle, onPreview, onOpen, locale }: Props) {
   const badge = offer.badges[0];
   const isDeal = badge === 'great_deal';
 
@@ -40,7 +43,7 @@ export function ProductTile({ offer, selected, onToggle, onPreview, onOpen }: Pr
               e.stopPropagation();
               onPreview();
             }}
-            title="Preview details"
+            title={t('uiPreviewTooltip', locale)}
           >
             i
           </button>
@@ -50,7 +53,7 @@ export function ProductTile({ offer, selected, onToggle, onPreview, onOpen }: Pr
               e.stopPropagation();
               onOpen();
             }}
-            title="Open property detail (insert sections)"
+            title={t('uiOpenDetails', locale)}
           >
             →
           </button>
@@ -72,13 +75,13 @@ export function ProductTile({ offer, selected, onToggle, onPreview, onOpen }: Pr
         <div class={styles.tilePriceRow}>
           {offer.discount && (
             <span class={styles.tilePriceOriginal}>
-              {formatPrice(offer.discount.originalPerNight, offer.price.currency)}
+              {formatPrice(offer.discount.originalPerNight, offer.price.currency, locale)}
             </span>
           )}
           <span class={styles.tilePrice}>
-            {formatPrice(offer.price.perNight, offer.price.currency)}
+            {formatPrice(offer.price.perNight, offer.price.currency, locale)}
           </span>
-          <span class={styles.tilePriceSuffix}>/ night</span>
+          <span class={styles.tilePriceSuffix}>{t('uiPerNightSlash', locale)}</span>
         </div>
       </div>
     </div>

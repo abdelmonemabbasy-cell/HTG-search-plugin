@@ -259,6 +259,7 @@ export function App(props: LoadedPayload) {
           onBack={backToSearch}
           onSelectAll={selectAllSections}
           onClear={clearAllSections}
+          locale={locale}
         />
         <div class={styles.footer}>
           <div class={`${styles.footerInfo} ${selectedSections.size > 0 ? styles.footerInfoActive : ''}`}>
@@ -361,6 +362,7 @@ export function App(props: LoadedPayload) {
                 onToggle={() => toggle(o.id)}
                 onPreview={() => setPreviewId(o.id)}
                 onOpen={() => openDetail(o.id)}
+                locale={locale}
               />
             ))}
           </div>
@@ -394,6 +396,7 @@ export function App(props: LoadedPayload) {
             setPreviewId(null);
             openDetail(previewOffer.id);
           }}
+          locale={locale}
         />
       )}
     </div>
