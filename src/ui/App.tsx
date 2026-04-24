@@ -295,8 +295,8 @@ export function App(props: LoadedPayload) {
         platform={platform}
         onPlatformChange={setPlatform}
       />
-      <SearchBar value={search} onChange={setSearch} />
-      <FilterBar filters={filters} onChange={setFilters} />
+      <SearchBar value={search} onChange={setSearch} locale={locale} />
+      <FilterBar filters={filters} onChange={setFilters} locale={locale} />
       <SortBar
         count={visible.length}
         total={offers.length}
@@ -305,6 +305,7 @@ export function App(props: LoadedPayload) {
         mode={mode}
         gridColumns={gridColumns}
         onGridColumnsChange={setGridColumns}
+        locale={locale}
       />
 
       {showBulkBar && (

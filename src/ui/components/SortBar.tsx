@@ -1,5 +1,7 @@
 import { h } from 'preact';
 import type { SortKey, InsertMode } from '@shared/messages';
+import type { Locale, StringKey } from '@shared/locales';
+import { t } from '@shared/locales';
 import styles from '../styles.css';
 
 interface Props {
@@ -10,14 +12,15 @@ interface Props {
   mode: InsertMode;
   gridColumns: number;
   onGridColumnsChange: (n: number) => void;
+  locale: Locale;
 }
 
-const SORT_LABELS: Record<SortKey, string> = {
-  default: 'Recommended',
-  priceAsc: 'Price: low to high',
-  priceDesc: 'Price: high to low',
-  ratingDesc: 'Top rated',
-  newest: 'New listings',
+const SORT_LABEL_KEYS: Record<SortKey, StringKey> = {
+  default: 'uiSortRecommended',
+  priceAsc: 'uiSortPriceAsc',
+  priceDesc: 'uiSortPriceDesc',
+  ratingDesc: 'uiSortTopRated',
+  newest: 'uiSortNewListings',
 };
 
 export function SortBar({
@@ -28,11 +31,14 @@ export function SortBar({
   mode,
   gridColumns,
   onGridColumnsChange,
+  locale,
 }: Props) {
   return (
     <div class={styles.sortBar}>
       <span class={styles.sortCount}>
-        {count === total ? `${total} properties` : `${count} of ${total}`}
+        {count === total
+          ? t('uiNProperties', locale, { n: total })
+          : t('uiNOfTotal', locale, { n: count, total })}
       </span>
       <div class={styles.sortBarRight}>
         {mode === 'grid' && (
@@ -55,9 +61,9 @@ export function SortBar({
             value={sort}
             onChange={(e) => onSortChange((e.target as HTMLSelectElement).value as SortKey)}
           >
-            {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
+            {(Object.keys(SORT_LABEL_KEYS) as SortKey[]).map((k) => (
               <option key={k} value={k}>
-                {SORT_LABELS[k]}
+                {t(SORT_LABEL_KEYS[k], locale)}
               </option>
             ))}
           </select>

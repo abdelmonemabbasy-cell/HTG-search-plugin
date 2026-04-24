@@ -1,6 +1,8 @@
 import { h } from 'preact';
 import styles from '../styles.css';
 import type { PropertyType } from '@shared/types';
+import type { Locale, StringKey } from '@shared/locales';
+import { t } from '@shared/locales';
 
 export interface Filters {
   propertyType?: PropertyType;
@@ -12,11 +14,12 @@ export interface Filters {
 interface Props {
   filters: Filters;
   onChange: (f: Filters) => void;
+  locale: Locale;
 }
 
 const PROPERTY_TYPES: PropertyType[] = ['apartment', 'villa', 'house', 'chalet', 'cabin', 'cottage', 'studio', 'penthouse'];
 
-export function FilterBar({ filters, onChange }: Props) {
+export function FilterBar({ filters, onChange, locale }: Props) {
   const toggle = <K extends keyof Filters>(key: K, value: Filters[K]) =>
     onChange({ ...filters, [key]: filters[key] === value ? undefined : value });
 
@@ -29,45 +32,45 @@ export function FilterBar({ filters, onChange }: Props) {
         class={`${styles.chip} ${!hasAny ? styles.chipActive : ''}`}
         onClick={clearAll}
       >
-        All
+        {t('uiFilterAll', locale)}
       </button>
       <button
         class={`${styles.chip} ${filters.priceMax === 150 ? styles.chipActive : ''}`}
         onClick={() => toggle('priceMax', 150)}
       >
-        Under €150
+        {t('uiFilterPriceMax', locale, { amount: '€150' })}
       </button>
       <button
         class={`${styles.chip} ${filters.priceMax === 300 ? styles.chipActive : ''}`}
         onClick={() => toggle('priceMax', 300)}
       >
-        Under €300
+        {t('uiFilterPriceMax', locale, { amount: '€300' })}
       </button>
       <button
         class={`${styles.chip} ${filters.minRating === 4.5 ? styles.chipActive : ''}`}
         onClick={() => toggle('minRating', 4.5)}
       >
-        ★ 4.5+
+        {t('uiFilterRatingPlus', locale)}
       </button>
       <button
         class={`${styles.chip} ${filters.minGuests === 4 ? styles.chipActive : ''}`}
         onClick={() => toggle('minGuests', 4)}
       >
-        4+ guests
+        {t('uiFilterGuestsPlus', locale, { n: 4 })}
       </button>
       <button
         class={`${styles.chip} ${filters.minGuests === 8 ? styles.chipActive : ''}`}
         onClick={() => toggle('minGuests', 8)}
       >
-        8+ guests
+        {t('uiFilterGuestsPlus', locale, { n: 8 })}
       </button>
-      {PROPERTY_TYPES.map((t) => (
+      {PROPERTY_TYPES.map((pt) => (
         <button
-          key={t}
-          class={`${styles.chip} ${filters.propertyType === t ? styles.chipActive : ''}`}
-          onClick={() => toggle('propertyType', t)}
+          key={pt}
+          class={`${styles.chip} ${filters.propertyType === pt ? styles.chipActive : ''}`}
+          onClick={() => toggle('propertyType', pt)}
         >
-          {t.charAt(0).toUpperCase() + t.slice(1)}
+          {t(pt as StringKey, locale)}
         </button>
       ))}
     </div>
