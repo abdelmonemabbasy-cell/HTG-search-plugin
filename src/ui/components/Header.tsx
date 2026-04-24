@@ -1,20 +1,23 @@
 import { h } from 'preact';
 import type { InsertMode } from '@shared/messages';
+import type { Locale, StringKey } from '@shared/locales';
+import { t } from '@shared/locales';
 import styles from '../styles.css';
 
 interface Props {
   mode: InsertMode;
   onModeChange: (mode: InsertMode) => void;
   onRefresh: () => void;
+  locale: Locale;
 }
 
-const MODES: Array<{ id: InsertMode; label: string }> = [
-  { id: 'single', label: 'Single' },
-  { id: 'list', label: 'List' },
-  { id: 'grid', label: 'Grid' },
+const MODES: Array<{ id: InsertMode; labelKey: StringKey }> = [
+  { id: 'single', labelKey: 'uiModeSingle' },
+  { id: 'list', labelKey: 'uiModeList' },
+  { id: 'grid', labelKey: 'uiModeGrid' },
 ];
 
-export function Header({ mode, onModeChange, onRefresh }: Props) {
+export function Header({ mode, onModeChange, onRefresh, locale }: Props) {
   return (
     <div class={styles.header}>
       <div class={styles.logo}>
@@ -26,7 +29,7 @@ export function Header({ mode, onModeChange, onRefresh }: Props) {
         <button
           class={styles.refreshBtn}
           onClick={onRefresh}
-          title="Refresh selected cards (re-render against current data)"
+          title={t('uiRefresh', locale)}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M23 4v6h-6" />
@@ -40,7 +43,7 @@ export function Header({ mode, onModeChange, onRefresh }: Props) {
               class={`${styles.modeOption} ${mode === m.id ? styles.modeOptionActive : ''}`}
               onClick={() => onModeChange(m.id)}
             >
-              {m.label}
+              {t(m.labelKey, locale)}
             </button>
           ))}
         </div>

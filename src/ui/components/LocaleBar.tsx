@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import type { Locale } from '@shared/locales';
-import { LOCALES } from '@shared/locales';
+import { LOCALES, t } from '@shared/locales';
 import type { Platform } from '@shared/platforms';
 import { PLATFORMS } from '@shared/platforms';
 import styles from '../styles.css';
@@ -17,7 +17,7 @@ export function LocaleBar({ locale, onLocaleChange, platform, onPlatformChange }
   return (
     <div class={styles.localeBar}>
       <div class={styles.localeGroup}>
-        <span class={styles.localeGroupLabel}>Market</span>
+        <span class={styles.localeGroupLabel}>{t('uiMarket', locale)}</span>
         <div class={styles.marketSelectWrap}>
           <span class={styles.marketSelectFlag}>{current.flag}</span>
           <select
@@ -35,7 +35,7 @@ export function LocaleBar({ locale, onLocaleChange, platform, onPlatformChange }
         </div>
       </div>
       <div class={styles.localeGroup}>
-        <span class={styles.localeGroupLabel}>Surface</span>
+        <span class={styles.localeGroupLabel}>{t('uiSurface', locale)}</span>
         <div class={styles.pillGroup}>
           {PLATFORMS.map((p) => (
             <button

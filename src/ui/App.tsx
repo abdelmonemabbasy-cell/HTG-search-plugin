@@ -243,6 +243,7 @@ export function App(props: LoadedPayload) {
           mode={mode}
           onModeChange={handleModeChange}
           onRefresh={() => emit<RefreshHandler>('REFRESH')}
+          locale={locale}
         />
         <LocaleBar
           locale={locale}
@@ -286,6 +287,7 @@ export function App(props: LoadedPayload) {
         mode={mode}
         onModeChange={handleModeChange}
         onRefresh={() => emit<RefreshHandler>('REFRESH')}
+        locale={locale}
       />
       <LocaleBar
         locale={locale}
