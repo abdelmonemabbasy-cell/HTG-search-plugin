@@ -1,12 +1,15 @@
 import { h } from 'preact';
+import type { Locale } from '@shared/locales';
+import { t } from '@shared/locales';
 import styles from '../styles.css';
 
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  locale: Locale;
 }
 
-export function SearchBar({ value, onChange }: Props) {
+export function SearchBar({ value, onChange, locale }: Props) {
   return (
     <div class={styles.searchRow}>
       <div class={styles.searchBox}>
@@ -14,7 +17,7 @@ export function SearchBar({ value, onChange }: Props) {
         <input
           class={styles.searchInput}
           type="text"
-          placeholder="Where to? City or country"
+          placeholder={t('uiSearchPlaceholder', locale)}
           value={value}
           onInput={(e) => onChange((e.target as HTMLInputElement).value)}
         />

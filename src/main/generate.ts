@@ -9,6 +9,7 @@ import { BRAND, FONT, VIEW_DEAL_GRADIENT } from './brand';
 import { loadBrandFonts } from './fonts';
 import { applyImageFill, loadImageHash } from './images';
 import { placeIcon, type IconName } from './icons';
+import { placeHomeToGoLogo } from './logo';
 
 const AMENITY_TO_ICON: Partial<Record<Amenity, IconName>> = {
   wifi: 'wifi',
@@ -240,6 +241,15 @@ async function buildWebCard(offer: Offer, locale: Locale): Promise<FrameNode> {
     ),
   );
 
+  const brandRow = hframe('brand', 6);
+  brandRow.counterAxisAlignItems = 'CENTER';
+  brandRow.paddingTop = 6;
+  brandRow.appendChild(
+    makeText('brandVia', 'via', FONT.regular, 11, BRAND.textTertiary),
+  );
+  brandRow.appendChild(placeHomeToGoLogo(14));
+  content.appendChild(brandRow);
+
   card.appendChild(content);
 
   // Actions column
@@ -343,9 +353,9 @@ async function buildMobileCard(
   const card = figma.createFrame();
   card.name = `HTG Card · ${offer.title} (${platform})`;
   card.layoutMode = 'VERTICAL';
-  card.primaryAxisSizingMode = 'AUTO';
   card.counterAxisSizingMode = 'FIXED';
-  card.resize(width, 1);
+  card.primaryAxisSizingMode = 'AUTO';
+  card.resize(width, spec.cardHeight);
   card.cornerRadius = spec.radius;
   card.fills = [{ type: 'SOLID', color: BRAND.white }];
   card.strokes = platform === 'android' ? [] : [{ type: 'SOLID', color: BRAND.border }];
@@ -448,8 +458,6 @@ async function buildMobileCard(
   const body = vframe('body', 6);
   body.layoutAlign = 'STRETCH';
   body.primaryAxisSizingMode = 'AUTO';
-  body.counterAxisSizingMode = 'FIXED';
-  body.resize(width, 1);
   body.paddingTop = body.paddingBottom = spec.padding;
   body.paddingLeft = body.paddingRight = spec.padding;
 
@@ -461,7 +469,7 @@ async function buildMobileCard(
     metaParts.push(typeLabel);
   }
   metaParts.push(
-    `${offer.capacity.bedrooms} ${t(offer.capacity.bedrooms === 1 ? 'bedrooms' : 'bedrooms', locale)}`,
+    `${offer.capacity.bedrooms} ${t(offer.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms', locale)}`,
   );
   metaParts.push(`${offer.capacity.guests} ${t('guests', locale)}`);
   body.appendChild(
@@ -534,6 +542,15 @@ async function buildMobileCard(
   );
   body.appendChild(priceRow);
 
+  const brandRow = hframe('brand', 6);
+  brandRow.counterAxisAlignItems = 'CENTER';
+  brandRow.paddingTop = 2;
+  brandRow.appendChild(
+    makeText('brandVia', 'via', FONT.regular, 11, BRAND.textTertiary),
+  );
+  brandRow.appendChild(placeHomeToGoLogo(14));
+  body.appendChild(brandRow);
+
   const divider = figma.createFrame();
   divider.name = 'divider';
   divider.layoutAlign = 'STRETCH';
@@ -546,11 +563,10 @@ async function buildMobileCard(
   compareRow.counterAxisAlignItems = 'CENTER';
   compareRow.layoutAlign = 'STRETCH';
   compareRow.primaryAxisSizingMode = 'FIXED';
-  compareRow.resize(width - spec.padding * 2, 1);
   compareRow.paddingTop = compareRow.paddingBottom = 4;
 
   compareRow.appendChild(
-    makeText('compareLabel', 'Compare', FONT.regular, 14, BRAND.textPrimary),
+    makeText('compareLabel', t('compare', locale), FONT.regular, 14, BRAND.textPrimary),
   );
 
   const checkbox = figma.createFrame();
@@ -565,6 +581,9 @@ async function buildMobileCard(
   body.appendChild(compareRow);
 
   card.appendChild(body);
+
+  // Re-affirm AUTO after all children are attached so the card hugs their total height.
+  card.primaryAxisSizingMode = 'AUTO';
   return card;
 }
 

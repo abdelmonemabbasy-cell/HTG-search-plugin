@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import type { Locale } from '@shared/locales';
-import { LOCALES } from '@shared/locales';
+import { LOCALES, t } from '@shared/locales';
 import type { Platform } from '@shared/platforms';
 import { PLATFORMS } from '@shared/platforms';
 import styles from '../styles.css';
@@ -13,26 +13,29 @@ interface Props {
 }
 
 export function LocaleBar({ locale, onLocaleChange, platform, onPlatformChange }: Props) {
+  const current = LOCALES.find((l) => l.id === locale) ?? LOCALES[0];
   return (
     <div class={styles.localeBar}>
       <div class={styles.localeGroup}>
-        <span class={styles.localeGroupLabel}>Locale</span>
-        <div class={styles.pillGroup}>
-          {LOCALES.map((l) => (
-            <button
-              key={l.id}
-              class={`${styles.pillBtn} ${locale === l.id ? styles.pillBtnActive : ''}`}
-              onClick={() => onLocaleChange(l.id)}
-              title={l.label}
-            >
-              <span class={styles.flag}>{l.flag}</span>
-              <span class={styles.localeCode}>{l.id.toUpperCase()}</span>
-            </button>
-          ))}
+        <span class={styles.localeGroupLabel}>{t('uiMarket', locale)}</span>
+        <div class={styles.marketSelectWrap}>
+          <span class={styles.marketSelectFlag}>{current.flag}</span>
+          <select
+            class={styles.marketSelect}
+            value={locale}
+            onChange={(e) => onLocaleChange((e.target as HTMLSelectElement).value as Locale)}
+          >
+            {LOCALES.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.flag}  {l.label} ({l.id.toUpperCase()})
+              </option>
+            ))}
+          </select>
+          <span class={styles.marketSelectChevron}>▾</span>
         </div>
       </div>
       <div class={styles.localeGroup}>
-        <span class={styles.localeGroupLabel}>Surface</span>
+        <span class={styles.localeGroupLabel}>{t('uiSurface', locale)}</span>
         <div class={styles.pillGroup}>
           {PLATFORMS.map((p) => (
             <button
