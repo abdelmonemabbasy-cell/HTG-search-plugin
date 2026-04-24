@@ -343,9 +343,9 @@ async function buildMobileCard(
   const card = figma.createFrame();
   card.name = `HTG Card · ${offer.title} (${platform})`;
   card.layoutMode = 'VERTICAL';
-  card.primaryAxisSizingMode = 'AUTO';
   card.counterAxisSizingMode = 'FIXED';
-  card.resize(width, 1);
+  card.primaryAxisSizingMode = 'AUTO';
+  card.resize(width, spec.cardHeight);
   card.cornerRadius = spec.radius;
   card.fills = [{ type: 'SOLID', color: BRAND.white }];
   card.strokes = platform === 'android' ? [] : [{ type: 'SOLID', color: BRAND.border }];
@@ -448,8 +448,6 @@ async function buildMobileCard(
   const body = vframe('body', 6);
   body.layoutAlign = 'STRETCH';
   body.primaryAxisSizingMode = 'AUTO';
-  body.counterAxisSizingMode = 'FIXED';
-  body.resize(width, 1);
   body.paddingTop = body.paddingBottom = spec.padding;
   body.paddingLeft = body.paddingRight = spec.padding;
 
@@ -461,7 +459,7 @@ async function buildMobileCard(
     metaParts.push(typeLabel);
   }
   metaParts.push(
-    `${offer.capacity.bedrooms} ${t(offer.capacity.bedrooms === 1 ? 'bedrooms' : 'bedrooms', locale)}`,
+    `${offer.capacity.bedrooms} ${t(offer.capacity.bedrooms === 1 ? 'bedroom' : 'bedrooms', locale)}`,
   );
   metaParts.push(`${offer.capacity.guests} ${t('guests', locale)}`);
   body.appendChild(
@@ -546,11 +544,10 @@ async function buildMobileCard(
   compareRow.counterAxisAlignItems = 'CENTER';
   compareRow.layoutAlign = 'STRETCH';
   compareRow.primaryAxisSizingMode = 'FIXED';
-  compareRow.resize(width - spec.padding * 2, 1);
   compareRow.paddingTop = compareRow.paddingBottom = 4;
 
   compareRow.appendChild(
-    makeText('compareLabel', 'Compare', FONT.regular, 14, BRAND.textPrimary),
+    makeText('compareLabel', t('compare', locale), FONT.regular, 14, BRAND.textPrimary),
   );
 
   const checkbox = figma.createFrame();
@@ -565,6 +562,9 @@ async function buildMobileCard(
   body.appendChild(compareRow);
 
   card.appendChild(body);
+
+  // Re-affirm AUTO after all children are attached so the card hugs their total height.
+  card.primaryAxisSizingMode = 'AUTO';
   return card;
 }
 

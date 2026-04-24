@@ -33,9 +33,11 @@ export type StringKey =
   | 'nonRefundable'
   | 'kmToCenter'
   | 'guests'
+  | 'bedroom'
   | 'bedrooms'
   | 'bathrooms'
   | 'beds'
+  | 'compare'
   | 'amenities'
   | 'amenitiesShowAll'
   | 'description'
@@ -109,9 +111,11 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     nonRefundable: 'Non-refundable',
     kmToCenter: '{n} km to center',
     guests: 'guests',
+    bedroom: 'bedroom',
     bedrooms: 'bedrooms',
     bathrooms: 'bathrooms',
     beds: 'beds',
+    compare: 'Compare',
     amenities: 'Amenities',
     amenitiesShowAll: 'Show all {n} amenities',
     description: 'About this property',
@@ -170,9 +174,11 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     nonRefundable: 'Nicht erstattungsfähig',
     kmToCenter: '{n} km zum Zentrum',
     guests: 'Gäste',
+    bedroom: 'Schlafzimmer',
     bedrooms: 'Schlafzimmer',
     bathrooms: 'Badezimmer',
     beds: 'Betten',
+    compare: 'Vergleichen',
     amenities: 'Ausstattung',
     amenitiesShowAll: 'Alle {n} Ausstattungsmerkmale anzeigen',
     description: 'Über diese Unterkunft',
@@ -231,9 +237,11 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     nonRefundable: 'No reembolsable',
     kmToCenter: 'A {n} km del centro',
     guests: 'huéspedes',
+    bedroom: 'dormitorio',
     bedrooms: 'dormitorios',
     bathrooms: 'baños',
     beds: 'camas',
+    compare: 'Comparar',
     amenities: 'Servicios',
     amenitiesShowAll: 'Ver los {n} servicios',
     description: 'Acerca de este alojamiento',
@@ -292,9 +300,11 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     nonRefundable: 'Non remboursable',
     kmToCenter: 'À {n} km du centre',
     guests: 'voyageurs',
+    bedroom: 'chambre',
     bedrooms: 'chambres',
     bathrooms: 'salles de bain',
     beds: 'lits',
+    compare: 'Comparer',
     amenities: 'Équipements',
     amenitiesShowAll: 'Afficher les {n} équipements',
     description: 'À propos de ce logement',
