@@ -9,6 +9,7 @@ import { BRAND, FONT, VIEW_DEAL_GRADIENT } from './brand';
 import { loadBrandFonts } from './fonts';
 import { applyImageFill, loadImageHash } from './images';
 import { placeIcon, type IconName } from './icons';
+import { placeHomeToGoLogo } from './logo';
 
 const AMENITY_TO_ICON: Partial<Record<Amenity, IconName>> = {
   wifi: 'wifi',
@@ -239,6 +240,15 @@ async function buildWebCard(offer: Offer, locale: Locale): Promise<FrameNode> {
       BRAND.textTertiary,
     ),
   );
+
+  const brandRow = hframe('brand', 6);
+  brandRow.counterAxisAlignItems = 'CENTER';
+  brandRow.paddingTop = 6;
+  brandRow.appendChild(
+    makeText('brandVia', 'via', FONT.regular, 11, BRAND.textTertiary),
+  );
+  brandRow.appendChild(placeHomeToGoLogo(14));
+  content.appendChild(brandRow);
 
   card.appendChild(content);
 
@@ -531,6 +541,15 @@ async function buildMobileCard(
     makeText('priceSuffix', t('total', locale), FONT.regular, 13, BRAND.textSecondary),
   );
   body.appendChild(priceRow);
+
+  const brandRow = hframe('brand', 6);
+  brandRow.counterAxisAlignItems = 'CENTER';
+  brandRow.paddingTop = 2;
+  brandRow.appendChild(
+    makeText('brandVia', 'via', FONT.regular, 11, BRAND.textTertiary),
+  );
+  brandRow.appendChild(placeHomeToGoLogo(14));
+  body.appendChild(brandRow);
 
   const divider = figma.createFrame();
   divider.name = 'divider';
