@@ -46,6 +46,7 @@ declare const styles: {
   readonly "dragGhostMeta": string;
   readonly "dragGhostTitle": string;
   readonly "dropCtaChevron": string;
+  readonly "dropCtaEnablePulse": string;
   readonly "dropCtaMenu": string;
   readonly "dropCtaMenuCheck": string;
   readonly "dropCtaMenuItem": string;
@@ -77,6 +78,8 @@ declare const styles: {
   readonly "helpItemTitle": string;
   readonly "helpList": string;
   readonly "helpMenu": string;
+  readonly "htgCtaPulse": string;
+  readonly "htgFavBounce": string;
   readonly "htgPaletteIn": string;
   readonly "htgPulse": string;
   readonly "htgShimmer": string;
@@ -155,6 +158,7 @@ declare const styles: {
   readonly "tileDiscount": string;
   readonly "tileFavBtn": string;
   readonly "tileFavBtnActive": string;
+  readonly "tileFavStar": string;
   readonly "tileHoverActions": string;
   readonly "tileHoverBtn": string;
   readonly "tileImage": string;

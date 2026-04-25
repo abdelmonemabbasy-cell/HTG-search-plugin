@@ -2,9 +2,9 @@
 
 HomeDrop is the HomeToGo design team's Figma plugin: drop real
 vacation-rental product data straight into your designs in one click
-(or one drag). Browse, filter, preview, and place a fully-populated
-HomeToGo product card, list, or grid — without copy-pasting a single
-title, price, or image.
+(or one drag). Browse, filter, drill into a property, and place a
+fully-populated HomeToGo product card, list, grid, or detail-page
+section — without copy-pasting a single title, price, or image.
 
 > **Status:** Proof of concept. Today the catalogue is a bundled JSON
 > file (`src/data/products.json`) consumed via `JsonOffersSource`. v2
@@ -43,23 +43,38 @@ card, a list of cards, a grid of cards, or one-or-more detail-page
 sections. Designers compose those outputs into their own screen
 chrome (status bars, navigation, sticky CTAs).
 
-### Three insert modes
+### Selection model + Drop CTA
 
-| Mode | What lands |
-|------|------------|
-| **Single** | One card at the viewport centre — or, if you have a frame selected whose children use `#fieldName` layers, the plugin populates those layers in place rather than creating a new card. |
-| **List** | N cards stacked in a vertical auto-layout frame. |
-| **Grid** | N cards in a wrapping auto-layout frame (2 / 3 / 4 columns, your choice). |
+Tiles are always multi-selectable. The footer CTA infers the layout
+from the selection count plus a persisted `multiLayout` preference
+(`list` / `grid`):
+
+| Selection | CTA |
+|-----------|-----|
+| 0 | Disabled "Pick a property" |
+| 1 | `Drop` — single card at viewport centre |
+| 2+ | Split-button `Drop {n} as list ▾` (chevron opens a List / Grid menu). Layout choice persists. |
+
+- **Plain click** replaces the selection with that tile.
+- **Shift-click** extends the visible-list range from the anchor.
+- **⌘ / Ctrl-click** toggles a tile additively without moving the
+  anchor.
+
+When the CTA becomes enabled (count goes 0 → 1), a brief pulse draws
+the eye to the freshly-actionable button.
 
 ### Two-level navigation
 
 - **Level 1 — Search.** Browse, search, filter, sort, multi-select,
   drop. The default surface.
-- **Level 2 — Property detail.** Click `→` on a tile to drill into
-  one property. Pick any subset of 12 sections (Gallery, Title
+- **Level 2 — Property detail.** Click `→` on a tile to drill in. The
+  hero, a property-facts panel (guests / bedrooms / baths / rating,
+  short description, amenity chips, price + provider), and a grid of
+  12 sections all scroll under a sticky breadcrumb (`← Properties /
+  <Property name>`). Pick any subset of sections — Gallery, Title
   header, Quick facts, Reasons to book, Reviews, Amenities, Room
   information, Description, House rules, Location, Price breakdown,
-  Cancellation policy) and drop them as one auto-layout container
+  Cancellation policy — and drop them as one auto-layout container
   that rebuilds the full rental detail page.
 
 ### Locale + platform aware
@@ -91,25 +106,31 @@ see placeholder noise.
 
 1. **Click the Drop CTA** with no canvas selection → card lands at
    the viewport centre.
-2. **Click Drop with a `#fieldName` frame selected** → the plugin
-   populates the frame's `#title`, `#image`, `#pricePerNight`, etc.
-   instead of creating a new card.
-3. **Drag a tile onto a frame on the canvas** → routed through
-   Figma's native `figma.on('drop')` event. If the frame has
-   `#fieldName` children, the plugin populates them. Otherwise the
-   card is filled in as a child (toggle Replace in the banner to
-   clear existing children first).
-4. **Drag a tile onto empty canvas** → card lands at the cursor
-   position.
+2. **Click Drop with a single `#fieldName` text/shape selected** → the
+   plugin fills that one layer with the matching offer field. (e.g.
+   select `#title` → the layer's text becomes the property title.)
+3. **Click Drop with a frame selected that contains `#fieldName`
+   children** → the plugin populates every matching descendant.
+4. **Drag a tile onto the canvas** → routed through Figma's native
+   `figma.on('drop')` event. Same target inference: dropped on a
+   `#field` text/shape → fill that one; dropped on a frame with
+   `#field` descendants → fill them all; dropped on a plain frame →
+   append the card as a child; dropped on the page → land at the
+   cursor.
 
-### Selection and favourites
+The detail-page hero (Level 2) is also draggable and behaves like a
+tile — drag from the hero to drop the property's card.
 
-- **Cmd / Ctrl-click** toggles a tile additively without moving the
-  selection anchor. **Shift-click** selects the visible-list range
-  from the anchor.
-- **Star (★)** any tile to favourite it. The Favourites filter chip
-  shows the count and filters the grid to just the starred ones.
-  Both persist across sessions.
+Each of the 12 detail sections is independently draggable too: drag a
+section tile from the detail-grid onto the canvas to drop just that
+one section.
+
+### Favourites
+
+- **Star (★)** any tile to favourite it (the star bounces briefly
+  when toggled). The Favourites filter chip in the search bar shows
+  the count and filters the grid to just the starred ones. Both
+  persist across sessions.
 - **`R`** picks a random visible tile.
 
 ### ⌘K command palette
@@ -119,45 +140,55 @@ plugin command:
 
 - **Drop**, **Random**, **Refresh**, **Find all** (selects every
   HomeDrop card on the current page and zooms to fit).
-- **Mode / Platform / Locale / Theme** switching.
-- **Save preset** captures `mode + platform + locale + gridColumns
-  + sort` under a name. **Apply preset** restores all five with one
-  click. Presets are also reachable from the header dropdown.
+- **Multi layout** (`list` / `grid`), **Platform** (`web` / `iOS` /
+  `Android`), **Locale** (`EN` / `DE` / `ES` / `FR`), **Theme**
+  (`Auto` / `Light` / `Dark`).
+- **Apply preset** restores a saved combination of multiLayout +
+  platform + locale + gridColumns + sort.
 
-### Canvas ↔ plugin awareness
+### Presets
 
-- Select an inserted HomeDrop card on the canvas → its tile in the
-  plugin **pulses** for 1.4 s and scrolls into view, so designers
-  know which property a placed card maps to.
-- Select any other (non-HomeDrop) frame → a banner appears at the
-  top of the plugin saying **"Drop into 'Frame name'"** with a
-  Replace toggle. The banner's sub-line tells you exactly what will
-  land: *"3 properties will land here as a grid"* /
-  *"Populate matching #fields with the selected property"* /
-  *"The selected property will land here"*.
+The header's **Presets** dropdown lists every saved combination of
+`multiLayout + platform + locale + gridColumns + sort`. "Save current
+settings…" expands an inline naming row, prefilled with a smart
+default (`Web · EN · 3 cols`); press Enter to commit.
 
-### Toast + Undo
+### Help menu
 
-Every successful drop ends with a 5 s bottom toast confirming what
+The header's **`?`** dropdown carries six bite-size cards covering
+Drop, drag, populate, ⌘K palette, multi-select, and the favourites
+star — everything a first-time user needs to discover the power
+features.
+
+### Canvas → plugin awareness
+
+Select an inserted HomeDrop card on the canvas → its tile in the
+plugin **pulses** for 1.4 s and scrolls into view, so designers know
+which property a placed card maps to.
+
+### Toast + persistent Undo
+
+Every successful drop fires a 5 s bottom toast confirming what
 landed. The toast carries an **Undo** button that removes the
 freshly-placed nodes.
 
-The first successful drop of each session also fires a one-shot
-confetti burst — a small reward to make the demo feel celebratory.
+If the toast disappears before you react, a small **`↺ Undo`** pill
+stays in the footer between the hint and the Drop CTA until the next
+drop replaces it. **`⌘Z` / `Ctrl+Z`** also fires the same undo.
 
 ### Theme + window sizing
 
 - **Theme picker** in the header (Auto / Light / Dark). Auto follows
   Figma's host theme via `html.figma-dark` / `html.figma-darker`;
-  Light and Dark force an override.
+  Light and Dark force an override. Dark mode uses Figma's native
+  panel palette so the plugin reads as part of the host.
 - **Drag the bottom-right corner** to resize the plugin window. Size
   is clamped 360×480 → 900×1200 and persisted to `clientStorage`.
 
-### Hover peek
+### Search
 
-Hold the cursor on a tile for 450 ms and a side panel opens with the
-hero image, location, capacity, and price — a fast way to check a
-property without opening the detail level.
+Autofocused on open, with a `×` clear button that appears when there
+is text. Search across title, city, country, and neighbourhood.
 
 ---
 
@@ -165,8 +196,8 @@ property without opening the detail level.
 
 Name your layers with a `#` prefix matching one of the documented
 keys, and the plugin will override them in place — either via the
-Drop CTA in Single mode or by dragging a tile directly onto your
-frame.
+Drop CTA in single-card mode or by dragging a tile / the detail
+hero directly onto your layer or frame.
 
 | Layer name | Gets set to |
 |------------|-------------|
@@ -185,6 +216,9 @@ Full spec in [`docs/LAYER_NAMING_SPEC.md`](docs/LAYER_NAMING_SPEC.md).
 Match is case- and separator-insensitive
 (`#PricePerNight` = `#price_per_night` = `#price-per-night`).
 
+A single selected `#field` text/shape fills that one node. A frame
+that contains `#field` descendants fills them all.
+
 ---
 
 ## Project layout
@@ -196,17 +230,16 @@ src/
   main/      Figma sandbox code (all figma.* API calls + drop routing)
     index.ts        # showUI + message router + figma.on('drop')
     generate.ts     # Platform-aware card builder (web + iOS + Android)
-    populate.ts     # #fieldName layer populator + fillIntoTarget
+    populate.ts     # populateNode + populateSelection + selection helpers
     sections/       # 12 detail-page section builders
 
   ui/        Preact iframe UI — owns the OffersSource
     App.tsx           # State machine (search + detail levels)
     offers-source.ts  # OffersSource interface + JsonOffersSource + v2 stub
-    confetti.ts       # Imperative runConfetti()
     theme.ts          # Auto/Light/Dark theme application
-    dragImage.ts      # Custom setDragImage() ghost factory
-    components/       # Header, Toast, CommandPalette, PresetsMenu,
-                      # DropTargetBanner, NumberTicker, HoverPeek, etc.
+    dragImage.ts      # Custom setDragImage() ghost factory (tile + section)
+    components/       # Header, HelpMenu, Toast, CommandPalette,
+                      # PresetsMenu, DetailView, DropCta, etc.
 
   shared/    Types, message contracts, locale strings (consumed by both)
   data/      PoC JSON (10 offers, en/de/es/fr — v2 drops this)
@@ -229,7 +262,7 @@ Two threads, clean separation:
   filters, sorts, and on each successful load syncs the result to
   main via the `SYNC_OFFERS` channel.
 
-11 typed message channels carry everything between threads. See the
+10 typed message channels carry everything between threads. See the
 [message-channels table in CLAUDE.md](CLAUDE.md#message-channels).
 
 The data layer is intentionally on the UI thread (where `fetch()`
@@ -244,10 +277,11 @@ the boot+sync flow and the v2 transition path.
 | Key | Action |
 |-----|--------|
 | `⌘K` / `Ctrl+K` | Open command palette |
+| `⌘Z` / `Ctrl+Z` | Undo the last drop (same as the footer Undo pill) |
 | `R` | Randomize (pick a random visible tile) |
 | `Enter` | Drop the selected tile(s) |
-| `Esc` | Close the palette / detail / preview, then clear selection |
-| `⌘A` / `Ctrl+A` | Select all visible tiles (List / Grid mode only) |
+| `Esc` | Close the palette / detail / clear selection |
+| `⌘A` / `Ctrl+A` | Select all visible tiles |
 | `Shift-click` | Extend selection from the anchor |
 | `⌘-click` / `Ctrl-click` | Toggle a tile in/out of selection |
 

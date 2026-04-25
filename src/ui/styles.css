@@ -812,6 +812,16 @@
 }
 
 /* ---------- Split-button drop CTA (multi-select layout picker) ---------- */
+.dropCtaEnablePulse {
+  animation: htgCtaPulse 0.6s ease-out 1;
+}
+
+@keyframes htgCtaPulse {
+  0%   { box-shadow: 0 2px 8px rgba(107, 66, 232, 0.25), 0 0 0 0 rgba(107, 66, 232, 0.45); }
+  60%  { box-shadow: 0 2px 8px rgba(107, 66, 232, 0.25), 0 0 0 8px rgba(107, 66, 232, 0); }
+  100% { box-shadow: 0 2px 8px rgba(107, 66, 232, 0.25), 0 0 0 0 rgba(107, 66, 232, 0); }
+}
+
 .dropCtaSplit {
   position: relative;
   display: inline-flex;
@@ -1700,6 +1710,18 @@
 .tileFavBtn:hover {
   transform: scale(1.1);
   color: var(--htg-coral);
+}
+
+.tileFavStar {
+  display: inline-block;
+  animation: htgFavBounce 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 1;
+}
+
+@keyframes htgFavBounce {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.45); }
+  60%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
 }
 
 .tilePulse {

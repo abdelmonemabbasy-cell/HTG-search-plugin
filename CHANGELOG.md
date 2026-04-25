@@ -5,6 +5,143 @@ Dates are in ISO-8601 (YYYY-MM-DD).
 
 ## [Unreleased]
 
+### 0.9 — 2026-04-25 — UX redesign
+
+A multi-commit pass that simplified the model, removed dead surfaces,
+and tightened the chrome based on real usage feedback.
+
+#### Selection model
+
+- The single/list/grid mode toggle is gone. Tiles are always
+  multi-selectable; the footer CTA infers the layout from selection
+  count + a persisted `multiLayout` preference (`list` / `grid`).
+  Split-button "Drop {n} as list ▾" appears at 2+ selected and a
+  chevron menu lets the user switch layout per-drop.
+- New `MultiLayout` type in `shared/messages`. `UiState.mode` →
+  `UiState.multiLayout`. `UiPreset.mode` → `UiPreset.multiLayout`.
+  One-shot migration in `App.readSavedState` upgrades old saves.
+- Tile checkbox: violet→magenta filled circle with ✓ when selected
+  (always visible), empty outlined circle on hover. Replaces the
+  bottom-right `tileCheck` badge.
+- Section tiles in DetailView use the same checkbox affordance.
+- ⌘A select-all is no longer mode-gated.
+
+#### Listing → details flow
+
+- Drop the per-tile `i` (preview) button — the level-2 DetailView
+  now carries the same property-facts that the modal had (4-stat
+  row, short description, amenity chips, price + provider). One
+  drill path: tile `→` → detail.
+- Delete `PreviewModal.tsx`, the `previewId` state, the Esc branch
+  that closed it, the `uiPreviewTooltip` locale strings.
+- Detail breadcrumb is sticky and reads `← Properties / <title>`
+  with ellipsis. Property identity stays pinned while scrolling
+  the section grid.
+- Section tiles get a per-kind inline-SVG icon in a violet-soft chip
+  on the left. 12 icons map 1:1 to `SectionKind`.
+- The detail hero is draggable — drag from the hero to drop the
+  property's card. Each section tile is also independently
+  draggable (custom pill drag image via `attachSectionDragImage`).
+
+#### Populate (single-layer fill)
+
+- New `populateNode(node, offer, locale)` in `populate.ts`. New
+  `singleFieldNodeInSelection(selection)` returns the first selection
+  entry whose name starts with `#` AND matches a layer key AND is a
+  fillable type (TEXT / RECTANGLE / ELLIPSE).
+- `insertLevel1` and `handleNativeDropOffer` now consult the
+  selection in this order: (1) single `#field` node → fill that one;
+  (2) frame with `#field` descendants → fill them all; (3) viewport-
+  centre insert. Notify is `Filled "<name>"` for the single-node
+  path, `Filled N field(s)` for the frame path.
+
+#### Removed: Replace banner
+
+- The "Drop into 'X' with Replace" feature was already broken (the
+  click CTA never honoured Replace; the toggle was decorative).
+  Strip the whole apparatus rather than wire fill+replace back on:
+  `DropTargetBanner.tsx`, the `dropTarget` / `replaceOnDrop` state,
+  `SELECTION_TARGET` channel + handler, `DropInto` and
+  `SelectionTarget` types, `dropInto` payload field, `replaceOnDrop`
+  saved-state field, the `'replaced'` toast kind, the `.dropBanner*`
+  CSS, ten dead locale strings, the Replace card in the help menu.
+
+#### Header reorg
+
+- Two visual groups in the header right side, separated by a 1 px
+  divider: `[find-all] [refresh] | [presets] [theme] [help]`. Canvas-
+  affecting actions on the left, preferences on the right.
+- New `HelpMenu` (?-icon dropdown) with six bite-size cards: Drop /
+  Drag / Populate / ⌘K palette / Multi-select / Favourites star.
+
+#### Toast + Undo
+
+- All toast labels are short and static (no property names): "Card
+  dropped" / "N cards dropped" / "Section dropped" / "N sections
+  dropped" / "Filled N field(s)" / `Filled "<name>"`. Long property
+  names no longer wrap the toast.
+- Persistent footer Undo: a `↺ Undo` pill lives in the footer until
+  the next drop replaces it, so a designer who looked away can still
+  revert. `⌘Z` / `Ctrl+Z` fires the same undo.
+- Hint toasts (no selection / no sections picked) are no longer
+  rendered as Figma's red error toast — they use the default neutral
+  toast so they don't read as "you broke something".
+
+#### Search bar
+
+- Real magnifier SVG (matching the find-all icon language), proper
+  size + orientation. Autofocus on plugin open. `×` clear button
+  appears when there's text. Placeholder copy switched from "Where
+  to? City or country" to "Search property, city or country" across
+  all four locales.
+
+#### Presets
+
+- `window.prompt()` for naming is gone. "Save current settings…"
+  expands an inline naming row autofocused with a smart default name
+  (`Web · EN · 3 cols`); Enter commits, Escape cancels. The palette's
+  `save-preset` command is removed (saving needs UI; applying still
+  works from the palette via `apply preset`).
+
+#### Dark mode
+
+- Re-tuned tokens to match Figma's native dark UI (`#2c2c2c` panel,
+  `#383838` subtle surfaces, `#4a4a4a` elevated cards / active pills,
+  white-alpha text). HomeToGo violet bumped to `#9b7ef5` for
+  contrast on the new background.
+- Explicit dark-mode override for `.chipActive` so the active filter
+  chip uses brand violet instead of going white-on-white.
+
+#### Section frames
+
+- Mobile multi-section drops now stack with the same 16 px
+  `LAYOUT_GAP` as web (was 0). All section frames use 16 px corner
+  radius across web/iOS/Android. Mobile card uses
+  `resizeWithoutConstraints` so the AUTO primary axis can grow
+  beyond `cardHeight` (was clamped).
+
+#### Removed: confetti, NumberTicker, hover-peek
+
+- Three v0.7 personality flourishes that didn't earn their space in
+  a daily-use designer tool. Deleted `confetti.ts`, `NumberTicker.tsx`,
+  `HoverPeek.tsx`, the `firstDropFiredRef`, the `runConfetti()` call,
+  the 450 ms hover timer, the `.ticker` / `.confettiCanvas` /
+  `.hoverPeek*` CSS, and the `uiHoverPeekTitle` locale strings.
+
+#### Locale dropdown
+
+- Drop the standalone flag pill before the select; the option text
+  now reads `EN English` / `DE Deutsch` / etc. — single non-
+  duplicated indicator.
+
+#### Micro-interactions
+
+- Favourite star bounces (`htgFavBounce` keyframe) on toggle.
+- Drop CTA pulses once when count goes 0 → 1 (`htgCtaPulse`
+  keyframe).
+- Fixes the long-running 1 px height clamp on the mobile card and
+  the duplicate-flag bug.
+
 ### 0.8.1 — 2026-04-25 — Rebrand polish + UX cleanup
 
 - Every user-facing "HTG" / "HomeToGo cards" string in main thread

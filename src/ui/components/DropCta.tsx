@@ -31,6 +31,17 @@ export function DropCta({
 }: Props) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  // Brief enable-pulse: fires once when count crosses 0 → 1 to draw the
+  // eye to the freshly-actionable button. The bumped key restarts the
+  // CSS animation each time it triggers.
+  const prevCountRef = useRef(count);
+  const [enablePulseKey, setEnablePulseKey] = useState(0);
+  useEffect(() => {
+    if (prevCountRef.current === 0 && count > 0) {
+      setEnablePulseKey((k) => k + 1);
+    }
+    prevCountRef.current = count;
+  }, [count]);
 
   useEffect(() => {
     if (!open) return;
@@ -45,11 +56,13 @@ export function DropCta({
 
   const isSplit = count >= 2;
   const disabled = count === 0;
+  const pulseClass = enablePulseKey > 0 ? styles.dropCtaEnablePulse : '';
 
   if (!isSplit) {
     return (
       <button
-        class={`${styles.btn} ${styles.btnPrimary}`}
+        key={`solo-${enablePulseKey}`}
+        class={`${styles.btn} ${styles.btnPrimary} ${pulseClass}`}
         onClick={onDrop}
         disabled={disabled}
       >
@@ -61,7 +74,8 @@ export function DropCta({
   return (
     <div class={styles.dropCtaSplit} ref={wrapRef}>
       <button
-        class={`${styles.btn} ${styles.btnPrimary} ${styles.dropCtaPrimary}`}
+        key={`primary-${enablePulseKey}`}
+        class={`${styles.btn} ${styles.btnPrimary} ${styles.dropCtaPrimary} ${pulseClass}`}
         onClick={onDrop}
       >
         {label}

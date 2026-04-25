@@ -16,6 +16,7 @@ interface Props {
   onApplyPreset: (p: UiPreset) => void;
   onSavePreset: (name: string) => void;
   onDeletePreset: (id: string) => void;
+  presetDefaultName: string;
   locale: Locale;
 }
 
@@ -34,6 +35,7 @@ export function Header({
   onApplyPreset,
   onSavePreset,
   onDeletePreset,
+  presetDefaultName,
   locale,
 }: Props) {
   const [themeOpen, setThemeOpen] = useState(false);
@@ -92,6 +94,7 @@ export function Header({
           onApply={onApplyPreset}
           onSave={onSavePreset}
           onDelete={onDeletePreset}
+          defaultName={presetDefaultName}
           locale={locale}
         />
         <div class={styles.themeMenu} ref={wrapRef}>

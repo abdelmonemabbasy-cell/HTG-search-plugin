@@ -1,4 +1,5 @@
 import { h } from 'preact';
+import { useState } from 'preact/hooks';
 import styles from '../styles.css';
 import type { Offer } from '@shared/types';
 import type { Locale } from '@shared/locales';
@@ -31,6 +32,10 @@ export function ProductTile({
 }: Props) {
   const badge = offer.badges[0];
   const isDeal = badge === 'great_deal';
+  // Brief CSS animation after every favourite toggle. The bounceKey
+  // bumps so React replays the keyframe even when favourite state
+  // doesn't change shape (e.g. star → empty → star).
+  const [bounceKey, setBounceKey] = useState(0);
 
   return (
     <div
@@ -63,11 +68,14 @@ export function ProductTile({
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavourite();
+            setBounceKey((k) => k + 1);
           }}
           title={t(favourite ? 'uiFavouriteRemove' : 'uiFavouriteAdd', locale)}
           aria-pressed={favourite}
         >
-          {favourite ? '★' : '☆'}
+          <span key={bounceKey} class={styles.tileFavStar}>
+            {favourite ? '★' : '☆'}
+          </span>
         </button>
         <div class={styles.tileHoverActions}>
           <button

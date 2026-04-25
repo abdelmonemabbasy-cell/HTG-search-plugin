@@ -10,6 +10,9 @@ interface Props {
   onApply: (p: UiPreset) => void;
   onSave: (name: string) => void;
   onDelete: (id: string) => void;
+  /** Smart default name (e.g. "Web · EN · 3 cols") prefilled when the
+      user opens the inline naming row. They can hit Enter to accept. */
+  defaultName: string;
   locale: Locale;
 }
 
@@ -21,7 +24,7 @@ interface Props {
  * palette; this menu is for users who'd rather not memorise the
  * shortcut.
  */
-export function PresetsMenu({ presets, onApply, onSave, onDelete, locale }: Props) {
+export function PresetsMenu({ presets, onApply, onSave, onDelete, defaultName, locale }: Props) {
   const [open, setOpen] = useState(false);
   const [naming, setNaming] = useState(false);
   const [draftName, setDraftName] = useState('');
@@ -50,10 +53,15 @@ export function PresetsMenu({ presets, onApply, onSave, onDelete, locale }: Prop
     };
   }, [open]);
 
-  // Focus the inline naming input as soon as it appears.
+  // Focus the inline naming input as soon as it appears, and prefill
+  // with the smart default name so Enter is a one-tap save.
   useEffect(() => {
-    if (naming) nameInputRef.current?.focus();
-  }, [naming]);
+    if (naming) {
+      setDraftName(defaultName);
+      nameInputRef.current?.focus();
+      nameInputRef.current?.select();
+    }
+  }, [naming, defaultName]);
 
   const commitSave = () => {
     const trimmed = draftName.trim();

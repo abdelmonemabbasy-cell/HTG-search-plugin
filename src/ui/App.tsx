@@ -497,10 +497,18 @@ export function App(props: LoadedPayload) {
         e.preventDefault();
         selectAllVisible();
       }
+      // ⌘Z / Ctrl+Z fires the persistent footer Undo so designers'
+      // muscle memory works inside the plugin too. Skipped while the
+      // user is typing in an input.
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !inInput && lastUndo) {
+        e.preventDefault();
+        emit<UndoHandler>('UNDO', { nodeIds: lastUndo.nodeIds });
+        setLastUndo(null);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedIds, multiLayout, visible, level, selectedSections, detailOfferId, paletteOpen]);
+  }, [selectedIds, multiLayout, visible, level, selectedSections, detailOfferId, paletteOpen, lastUndo]);
 
   const detailOffer = detailOfferId ? offersById.get(detailOfferId) ?? null : null;
   const count = selectedIds.size;
@@ -626,6 +634,15 @@ export function App(props: LoadedPayload) {
   const deletePreset = (id: string) =>
     setPresets((all) => all.filter((p) => p.id !== id));
 
+  // Build a smart default preset name from the live settings so the
+  // user can usually just press Enter ("Web · EN · 3 cols").
+  const platformLabel = (() => {
+    const map: Record<Platform, string> = { web: 'Web', ios: 'iOS', android: 'Android' };
+    return map[platform];
+  })();
+  const layoutLabel = multiLayout === 'grid' ? `${gridColumns} cols` : 'list';
+  const presetDefaultName = `${platformLabel} · ${locale.toUpperCase()} · ${layoutLabel}`;
+
   const headerProps = {
     onRefresh: () => emit<RefreshHandler>('REFRESH'),
     onFindAll: () => emit<FindAllHandler>('FIND_ALL'),
@@ -635,6 +652,7 @@ export function App(props: LoadedPayload) {
     onApplyPreset: applyPreset,
     onSavePreset: savePreset,
     onDeletePreset: deletePreset,
+    presetDefaultName,
     locale,
   };
 
