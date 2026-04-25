@@ -1,9 +1,9 @@
-# HomeToGo Data — Figma Plugin (PoC)
+# HomeDrop — Figma Plugin (PoC)
 
-A Figma plugin that lets HomeToGo designers drop real vacation-rental product
-data straight into their designs. Open it, browse 10 mock properties, and
-click once to insert a fully-populated HomeToGo product card, a list, or a
-grid.
+HomeDrop is the HomeToGo design team's Figma plugin: drop real
+vacation-rental product data straight into your designs. Open it, browse
+10 mock properties, and click once (or drag a tile onto the canvas) to
+insert a fully-populated HomeToGo product card, a list, or a grid.
 
 > **Status:** Proof of concept. Data is a bundled JSON file (`src/data/products.json`).
 > v2 will wire this up to the internal HTG search/product API.
@@ -21,7 +21,7 @@ In Figma desktop:
 
 1. **Plugins → Development → Import plugin from manifest…**
 2. Pick the generated `manifest.json` at the repo root.
-3. **Run → HomeToGo Data → Browse properties.**
+3. **Run → HomeDrop → Browse properties.**
 
 For iterative development:
 
@@ -31,7 +31,7 @@ npm test          # run the Vitest suite once
 npm run test:watch  # re-run tests on every change
 ```
 
-Then click **Plugins → Development → HomeToGo Data** again; Figma reloads the
+Then click **Plugins → Development → HomeDrop** again; Figma reloads the
 plugin on each run.
 
 ---

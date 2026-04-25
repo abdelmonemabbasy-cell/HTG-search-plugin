@@ -126,12 +126,12 @@ export default async function () {
   on<RefreshHandler>('REFRESH', async () => {
     const selection = figma.currentPage.selection;
     if (selection.length === 0) {
-      figma.notify('Select one or more HomeToGo cards first.', { error: true });
+      figma.notify('Select one or more HomeDrop cards first.', { error: true });
       return;
     }
     const tagged = collectTaggedFrames(selection);
     if (tagged.length === 0) {
-      figma.notify('No inserted HomeToGo cards in the current selection.', { error: true });
+      figma.notify('No inserted HomeDrop cards in the current selection.', { error: true });
       return;
     }
     let refreshed = 0;

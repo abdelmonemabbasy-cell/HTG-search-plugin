@@ -1,6 +1,7 @@
-# CLAUDE.md — HomeToGo Data Figma Plugin
+# CLAUDE.md — HomeDrop Figma Plugin
 
-Context for future Claude sessions working on this repository.
+Context for future Claude sessions working on this repository. The plugin is
+called **HomeDrop**; HomeToGo is the brand whose product data it places.
 
 ## Design principle: sections and cards, never screens
 
@@ -19,14 +20,14 @@ Designers compose the card/section outputs into their own screens.
 
 ## What this is
 
-A **Proof-of-Concept Figma plugin** that lets HomeToGo designers insert real
-vacation-rental product data into their designs with one click. PoC v1 reads a
-local JSON file of 10 mock offers; a future v2 will call the internal HTG
-search/product API once it becomes available.
+**HomeDrop** is a Proof-of-Concept Figma plugin that lets HomeToGo designers
+insert real vacation-rental product data into their designs with one click
+(or one drag). PoC v1 reads a local JSON file of 10 mock offers; a future v2
+will call the internal HTG search/product API once it becomes available.
 
 The core UX: open plugin → browse/search/filter properties → optionally preview
-→ pick one or many → click **Insert** → plugin places a fully-populated HTG
-product card (or a list / grid of cards) on the canvas.
+→ pick one or many → click **Drop** (or drag a tile onto the canvas) → plugin
+places a fully-populated HomeToGo product card (or a list / grid of cards).
 
 ## Who asked for this
 

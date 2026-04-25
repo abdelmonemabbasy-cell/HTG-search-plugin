@@ -26,8 +26,7 @@ generated file (which is gitignored).
 1. Open Figma desktop.
 2. **Menu → Plugins → Development → Import plugin from manifest…**
 3. Select the `manifest.json` at the repo root.
-4. Open any Figma file. Run **Plugins → Development → HomeToGo Data →
-   Browse properties**.
+4. Open any Figma file. Run **Plugins → Development → HomeDrop**.
 
 When watching, each plugin run picks up the latest bundle — no re-import.
 

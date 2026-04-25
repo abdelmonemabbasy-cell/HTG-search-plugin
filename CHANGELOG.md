@@ -1,9 +1,20 @@
-# Changelog
+# Changelog — HomeDrop
 
-All notable changes to this plugin will be documented in this file. Dates are
-in ISO-8601 (YYYY-MM-DD).
+All notable changes to the HomeDrop plugin will be documented in this file.
+Dates are in ISO-8601 (YYYY-MM-DD).
 
 ## [Unreleased]
+
+### 0.7.1 — 2026-04-25 — Rebrand to HomeDrop
+
+The plugin is now called **HomeDrop** end-to-end. HomeToGo remains the data
+brand; only the wrapper that places it changed.
+
+- `package.json` plugin id and name → `homedrop-plugin` / `HomeDrop`.
+- Header wordmark simplified to "HomeDrop" (the HomeToGo logo was redundant
+  next to the listing data it stamps onto every card).
+- All `htg*` plugin-data keys are unchanged so previously inserted cards
+  still round-trip through Refresh.
 
 ### 0.7.0 — 2026-04-25 — UX polish: multi-select, palette, canvas awareness, drop-into-frame
 
