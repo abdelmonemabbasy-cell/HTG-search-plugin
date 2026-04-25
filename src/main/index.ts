@@ -228,6 +228,7 @@ export default async function () {
   //   - application/htg-offer-multi → list/grid of cards
   //   - application/htg-section     → a single detail-page section
   // Returning false tells Figma not to insert a default text node.
+  figma.notify('HomeDrop ready (drop handler registered)');
   figma.on('drop', (event) => {
     // Diagnostic: surface what Figma actually delivered. Some browsers
     // / Figma versions silently drop custom MIME types from the

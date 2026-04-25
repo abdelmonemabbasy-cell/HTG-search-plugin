@@ -37,7 +37,6 @@ import type { Filters } from './components/FilterBar';
 import { ResizeHandle } from './components/ResizeHandle';
 import { Toast } from './components/Toast';
 import { CommandPalette, type PaletteCommand } from './components/CommandPalette';
-import { attachDragImage, attachSectionDragImage } from './dragImage';
 import { applyTheme } from './theme';
 import styles from './styles.css';
 
@@ -420,10 +419,9 @@ export function App(props: LoadedPayload) {
     // text/plain fallback so non-Figma drop targets get something readable.
     e.dataTransfer.setData('text/plain', offer.title);
     e.dataTransfer.effectAllowed = 'copy';
-    // Custom drag image. Wrapped in try/catch — if it fails, the drag
-    // still proceeds with the browser's default tile snapshot rather
-    // than aborting the whole drag.
-    try { attachDragImage(e, offer, locale); } catch {}
+    // No custom drag image — the off-screen ghost element broke
+    // Figma's plugin-drag detection in some versions. Browser's
+    // default tile snapshot is fine.
   };
 
   const onSectionDragStart = (offer: Offer, kind: SectionKind, e: DragEvent) => {
@@ -432,7 +430,6 @@ export function App(props: LoadedPayload) {
     e.dataTransfer.setData('application/htg-section', JSON.stringify(body));
     e.dataTransfer.setData('text/plain', `${kind} · ${offer.title}`);
     e.dataTransfer.effectAllowed = 'copy';
-    try { attachSectionDragImage(e, sectionDragLabel(kind, locale)); } catch {}
   };
 
   // Canvas drops are handled exclusively by the main thread's
