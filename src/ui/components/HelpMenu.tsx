@@ -50,8 +50,8 @@ export function HelpMenu({ locale }: Props) {
               body={t('uiHelpDragBody', locale)}
             />
             <HelpItem
-              title={t('uiHelpPopulateTitle', locale)}
-              body={t('uiHelpPopulateBody', locale)}
+              title={t('uiHelpReplaceTitle', locale)}
+              body={t('uiHelpReplaceBody', locale)}
             />
             <HelpItem
               title={t('uiHelpPaletteTitle', locale)}

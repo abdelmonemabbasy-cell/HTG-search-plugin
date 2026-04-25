@@ -51,42 +51,48 @@ integration later.
 ```
 src/
   main/         # Figma sandbox (QuickJS). Owns all figma.* API calls.
-    index.ts       # showUI + message router
+    index.ts       # showUI + message router + figma.on('drop') +
+                   # replace-mode helpers (isReplaceableFrame,
+                   # firstReplaceableFrameInSelection, replaceFrame)
     generate.ts    # Platform-aware card builder (web + iOS + Android)
-    populate.ts    # #fieldName populator (locale-aware)
-    brand.ts       # Canvas-side tokens (colors, fonts, gradient paint)
+    brand.ts       # Canvas tokens — Appearance-aware Proxy that swaps
+                   # to LIGHT_TOKENS or DARK_TOKENS per drop
     icons.ts       # Inline SVG icon set (amenities/share/heart/…)
     images.ts      # figma.createImageAsync wrapper
     fonts.ts       # Parallel font loader
     sections/      # Phase A detail-page section builders
-      gallery.ts
-      amenities.ts
-      reviews.ts
-      priceBreakdown.ts
+      index.ts        # buildSection(kind, offer, locale, platform, appearance)
+      common.ts       # sectionFrame + helpers
+      gallery.ts / amenities.ts / reviews.ts / priceBreakdown.ts /
+      titleHeader.ts / quickFacts.ts / reasonsToBook.ts /
+      roomInformation.ts / description.ts / houseRules.ts /
+      location.ts / cancellationPolicy.ts
   ui/           # Preact iframe. Search + detail + pickers.
-    index.tsx
+    index.tsx       # render(App) + injects favicon
     App.tsx         # Level-1 search + Level-2 detail state machine
-    offers-source.ts # OffersSource interface + JsonOffersSource + v2 stub
-    confetti.ts     # Imperative runConfetti() (no React tree)
-    theme.ts        # Auto/Light/Dark theme application (data-theme attr)
-    dragImage.ts    # Custom drag-image factory (setDragImage)
-    styles.css
-    components/     # Header, LocaleBar, SearchBar, FilterBar, SortBar,
-                    # ProductTile, PreviewModal, DetailView,
-                    # ResizeHandle, HoverPeek, NumberTicker, Toast,
-                    # CommandPalette, DropTargetBanner, PresetsMenu
+    offers-source.ts # OffersSource + JsonOffersSource + v2 stub
+    theme.ts        # Auto/Light/Dark plugin-chrome theme application
+    dragImage.ts    # Custom drag-image factory (tile + section)
+    styles.css      # CSS Modules + light/dark token blocks
+    components/     # Header, LocaleBar (locale + platform + appearance),
+                    # SearchBar, FilterBar, SortBar, ProductTile,
+                    # DetailView, ResizeHandle, Toast, CommandPalette,
+                    # PresetsMenu, HelpMenu, DropCta
   shared/       # Consumed by both threads (no DOM / no figma.* API).
     types.ts        # Offer + ReviewDetails + PriceBreakdown + enums
-    messages.ts     # Insert*Payload + SectionKind + UiState
+    messages.ts     # Insert*Payload + SectionKind + UiState +
+                    # MultiLayout + Appearance
     locales.ts      # Locale + strings table + t(key, locale, vars)
     platforms.ts    # Platform + PLATFORM_SPEC (card dims per platform)
     format.ts       # Locale-aware price formatter
-    layer-names.ts  # #fieldName spec + textForKey(offer, locale)
   data/
     products.json  # 10 offers; 3 enriched with detail-page data
                    # (gallery 5–6 imgs, amenitiesByCategory, reviewDetails,
                    # priceBreakdown) — the rest stay lean to cover the
                    # adaptive "missing data" path.
+  assets/
+    icon.svg / icon-128.png / icon-256.png / icon-512.png — plugin
+    icon (HomeToGo wordmark on brand purple).
 ```
 
 Main and UI threads communicate via `emit` / `on` from
@@ -114,35 +120,40 @@ The legacy `'DROP'` channel and the `'SELECTION_TARGET'` channel were
 removed in 0.9 along with the Replace-banner feature; canvas drops
 go through `figma.on('drop')` exclusively.
 
-One `figma.on(...)` event on the main thread:
+Two `figma.on(...)` events on the main thread:
 
 - `selectionchange` — fires `pushHighlight()`.
 - `drop` — three MIME types: `application/htg-offer`,
   `application/htg-offer-multi`, `application/htg-section`. Returning
-  `false` suppresses Figma's default text-node insertion. The handler
-  inspects `event.node`: a `#field` text/shape gets filled directly,
-  a frame with `#field` descendants gets populated via
-  `populateSelection`, anything else falls through to
-  `landAtDropEvent` (append-as-child or land-at-coords).
+  `false` suppresses Figma's default text-node insertion. For
+  single-card drops the handler inspects `event.node`: if it's a
+  replaceable frame (FRAME / COMPONENT / INSTANCE) the card swaps
+  the frame at the same canvas position via `replaceFrame`;
+  otherwise the card lands via `landAtDropEvent`.
 
-## Interaction model — four ways to drop a card
+## Interaction model — three ways the Drop CTA / drag behaves
 
-The same selection-aware routing applies whether the user clicks the
-Drop CTA or drags a tile.
+Both surfaces (click CTA, drag-onto-canvas) share the same target
+inference.
 
-1. **No selection** → card lands at viewport centre (CTA) / cursor
-   coords (drag).
-2. **Single `#field` text/shape selected** → fill that one node with
-   the matching offer field (`#title` → property title, `#image` →
-   hero image fill, etc.).
-3. **Frame with `#field` descendants selected** → fill every matching
-   descendant via `populateSelection`. Untouched layers are left
-   alone.
-4. **Plain frame selected (no `#field` descendants)** → drag drops
-   the card as a child; click drops at viewport centre.
+1. **No selection / dropped on the page** → card lands at viewport
+   centre (CTA) or at the cursor (drag).
+2. **A frame is selected (or dropped on)** → **replace mode**: the
+   plugin swaps the frame for the new card at the frame's exact
+   canvas position, inheriting the parent + auto-layout index.
+   Treats existing HomeDrop cards (recognised by their `htgOfferId`
+   plugin-data) as replaceable too, so designers can swap one
+   property for another in one click.
+3. **A page is the drop target on a multi-tile drag** → all selected
+   tiles drop as a list/grid auto-layout container at the cursor.
 
 The detail-page hero (Level 2) and each section tile in the detail
 grid are also draggable, sharing the same MIME types.
+
+The legacy `#fieldName` populate path was removed in 0.10. When v2
+introduces design-system components carrying named data slots, the
+populate behaviour will be re-introduced as the seam between this
+plugin and the system component.
 
 ## Selection model — multi-select + split CTA
 
@@ -221,15 +232,14 @@ strikethrough price. See `docs/BRAND.md` for the palette.
 
 | Task | Where to edit |
 |------|---------------|
-| Add a new offer field | `src/shared/types.ts` → `src/data/products.json` → `src/shared/layer-names.ts` (add key + formatter) → `src/main/generate.ts` (render it) |
+| Add a new offer field | `src/shared/types.ts` → `src/data/products.json` → `src/main/generate.ts` (render it) |
 | Add an amenity icon | `src/main/icons.ts` (add SVG) → `AMENITY_TO_ICON` in `src/main/generate.ts` |
-| Change card visuals | `src/main/generate.ts` + tokens in `src/main/brand.ts` |
+| Change card visuals | `src/main/generate.ts` + tokens in `src/main/brand.ts` (light + dark sets) |
 | Change plugin UI look | `src/ui/styles.css` + CSS-var tokens at top (light + dark sets) |
 | Add a filter chip | `src/ui/components/FilterBar.tsx` + `Filters` type + matching filter in `App.tsx` |
 | Add a palette command | `paletteCommands` array in `src/ui/App.tsx` |
 | Add a new message channel | `src/shared/messages.ts` (handler interface) → wire `on/emit` in `src/main/index.ts` and `src/ui/App.tsx` |
 | Wire to a real API | Implement `ApiOffersSource` in `src/ui/offers-source.ts` (the file already has a commented sketch). Swap `defaultOffersSource` → `new ApiOffersSource(url)` in `App.tsx`. Add the API host + image CDN to `package.json` → `figma-plugin.networkAccess.allowedDomains`. Delete `localize()` + the `i18n` block on `Offer` once the API returns locale-specific data directly. |
-| Add a new data field | Add it to `Offer` in `src/shared/types.ts`. Either populate `products.json` (for the PoC) or extend `parseApiOffer()` (for v2). Render it in `src/main/generate.ts` and add a `#fieldName` mapping in `src/shared/layer-names.ts`. |
 
 ## Gotchas (from the research)
 
@@ -244,7 +254,10 @@ strikethrough price. See `docs/BRAND.md` for the palette.
    node APIs — legacy synchronous ones will be removed.
 5. The `layoutWrap = 'WRAP'` property needs `primaryAxisSizingMode = 'FIXED'`.
 6. Don't mutate `node.fills` in place; always assign a new array.
-7. `findOne` is O(n). In `populate.ts` we use a single `findAll` up front.
+7. `BRAND` in `src/main/brand.ts` is a Proxy that resolves to the active
+   appearance's tokens. Call `setBrandAppearance(appearance)` once at the
+   top of `buildCard` / `buildSection`; every `BRAND.*` read inside the
+   builder picks up the right variant automatically.
 
 ## Build / run
 
@@ -269,7 +282,5 @@ manifest…** and pick the generated `manifest.json`.
 1. Read `docs/SCOPE.md` for what's in and out of v1.
 2. Read `docs/ARCHITECTURE.md` before touching the thread-crossing parts.
 3. Read `docs/DATA_MODEL.md` before changing `Offer` — the contract is shared
-   with `products.json` and the layer-naming spec.
-4. Read `docs/LAYER_NAMING_SPEC.md` before changing the populate path — this
-   doc is designer-facing.
-5. Check `CHANGELOG.md` for recent moves.
+   with `products.json` and (in v2) `parseApiOffer`.
+4. Check `CHANGELOG.md` for recent moves.

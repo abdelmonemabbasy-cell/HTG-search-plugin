@@ -16,31 +16,41 @@ populated HomeToGo product card onto the canvas.
 - **Figma-native UI** (Preact + `@create-figma-plugin/ui`) styled with the
   HomeToGo palette: purple→pink gradient CTA, purple star, soft-coral discount
   pill, neutral card grid.
-- **Three insert modes**, all adaptive to the offer's available fields:
-  - Single card at viewport centre
-  - List (vertical auto-layout stack)
-  - Grid (2-column auto-layout wrap)
-- **Hybrid insertion**: if the designer has a frame or component selected
-  whose children use the `#fieldName` convention, populate those layers in
-  place; otherwise generate a new card from scratch.
-- **Search + filter**: free-text search across title/city/country, plus filter
-  chips for price ceiling, min rating, min guest count, and property type.
-- **Preview pane**: full-detail bottom-sheet with all fields + direct insert.
-- **Designer spec**: `docs/LAYER_NAMING_SPEC.md` documents the layer-naming
-  contract so HTG designers can retro-fit their own components.
-- **Adaptive rendering**: every card section is conditional on the offer
-  actually having that data. No placeholder noise.
-- **UX polish (v0.6 / v0.7)**:
-  - Drag-tile-onto-canvas → drops a card or populates `#fieldName`
-    layers in the selected frame.
-  - Dark mode (Auto / Light / Dark), persisted across sessions.
+- **Multi-select + split-button CTA**, all adaptive to the offer's
+  available fields. Selection count + a persisted `multiLayout`
+  preference drive the engine mode:
+  - 1 selected → single card at viewport centre
+  - 2+ selected → vertical auto-layout list, or wrapping auto-layout
+    grid (2 / 3 / 4 columns)
+- **Replace mode**: select an empty placeholder frame (or an existing
+  HomeDrop card) and click Drop → the plugin swaps the frame for the
+  new card at the exact same canvas position, inheriting the parent
+  and auto-layout index. Same trick works on drag.
+- **Light / Dark Appearance toggle**: independent of the plugin's
+  own UI theme, switches the dropped card between light- and
+  dark-variant tokens so designers can build dark-mode mockups
+  without leaving the plugin.
+- **Search + filter**: free-text search across title/city/country/
+  neighbourhood, plus filter chips for price ceiling, min rating,
+  min guest count, property type, and a heart-icon Favourites chip
+  with a count badge.
+- **Detail page (Level 2)**: drill into a property to see the hero,
+  property facts, amenity chips, price, and pick any subset of 12
+  detail-page sections to drop as one auto-layout container.
+- **Adaptive rendering**: every card section is conditional on the
+  offer actually having that data. No placeholder noise.
+- **UX polish**:
+  - Native-feeling dark mode tuned to Figma's `#2C2C2C` panel
+    palette.
   - Resizable plugin window with size persisted in clientStorage.
-  - Multi-select with shift / cmd anchor range, persistent favourites
-    (★), randomize button + R shortcut.
-  - ⌘K command palette; bottom Toast with Undo; saved presets
-    (mode + platform + locale + gridColumns + sort).
+  - Tile click toggles selection; shift-click extends a range;
+    persistent favourites (heart); randomize icon-button next to
+    the Drop CTA + R shortcut.
+  - ⌘K command palette; bottom Toast with Undo + a persistent
+    footer Undo pill (and ⌘Z); saved presets (multiLayout +
+    platform + locale + appearance + gridColumns + sort).
   - Canvas selection awareness: tiles pulse when their card is
-    selected on the canvas; a banner names the active drop target.
+    selected on the canvas.
 
 ## Non-goals — what the plugin intentionally does NOT do
 
@@ -63,10 +73,11 @@ screen chrome.
   accessible from this session. The network-access allowlist and message
   shape are designed to make swapping in `fetch` a small change.
 - **Authentication / user-specific data.** PoC is read-only and anonymous.
-- **Official HTG component import.** Designers will provide the production
-  product-card component via team library; the plugin will then
-  `figma.importComponentByKeyAsync(key)` to place it. The populate path
-  (see `docs/LAYER_NAMING_SPEC.md`) is the contract between the two.
+- **Official HTG design-system component import.** Designers will
+  provide the production product-card component via team library;
+  the plugin will then `figma.importComponentByKeyAsync(key)` to
+  place it. The replace-mode flow becomes the contract: drop a
+  property onto a system component instance to swap data + variants.
 - **Production icon set.** The PoC ships generic line icons; the HTG icon
   library will replace them.
 - **Persistence.** Client-storage of last search / filters / multiLayout is a v2 nice-to-have.
@@ -88,19 +99,22 @@ screen chrome.
    the split-button CTA chevron, picks **Drop as list** or **Drop as
    grid** → an auto-layout container with populated cards is placed.
    Layout choice persists for the next multi-drop.
-3. Designer selects a single text layer named `#title` and clicks
-   **Drop** → that one layer's text becomes the property title (no
-   new card created). Same for `#image`, `#pricePerNight`, etc.
-4. Designer selects a frame with several `#fieldName` descendants
-   and clicks **Drop** → every matching descendant fills in place.
+3. Designer selects an empty placeholder frame and clicks **Drop**
+   → the plugin removes the frame and places the new card at the
+   exact same canvas position, inheriting parent + auto-layout
+   index. Replace-mode also works on existing HomeDrop cards: select
+   one, click Drop with a different property, and the card swaps in
+   place.
+4. Designer toggles **Appearance: Dark** in the LocaleBar → the next
+   drop renders the dark-variant card (dark surface, white-ish
+   text), while the plugin's own UI theme stays on its own setting.
 5. Designer drills into a property (Level 2), picks 3 sections, and
    clicks **Drop sections** → those sections drop as a single
    vertical auto-layout container with 16 px gap (web + iOS +
    Android).
 6. Designer drags a tile (or the detail-page hero) onto the canvas →
    card lands at the cursor via `figma.on('drop')`. Drag onto a
-   `#field` text/shape fills it; drag onto a frame with `#field`
-   descendants populates them all.
+   frame → the frame is replaced.
 7. Designer toggles between Auto / Light / Dark → the plugin colour
    scheme flips immediately, dark mode reads as native Figma chrome,
    and the choice persists across sessions.

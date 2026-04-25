@@ -4,11 +4,16 @@ export type Locale = 'en' | 'de' | 'es' | 'fr';
 // platforms (Windows, certain emoji fonts) render `🇬🇧 🇩🇪 🇪🇸 🇫🇷`
 // as doubled letter blocks (the "doubled-flag" bug); the text codes
 // look correct everywhere and stay short enough for the locale pill.
-export const LOCALES: Array<{ id: Locale; label: string; flag: string }> = [
-  { id: 'en', label: 'English', flag: 'EN' },
-  { id: 'de', label: 'Deutsch', flag: 'DE' },
-  { id: 'es', label: 'Español', flag: 'ES' },
-  { id: 'fr', label: 'Français', flag: 'FR' },
+// Emoji flags for each locale. The "doubled flag" rendering bug
+// (Windows + a handful of monochrome emoji fonts) is sidestepped by
+// the custom LocaleBar dropdown rendering each option as
+// "<flag> <label>" with a single consistent layout — there is no
+// native `<select>` to mis-render the regional-indicator pair.
+export const LOCALES: Array<{ id: Locale; label: string; flag: string; code: string }> = [
+  { id: 'en', label: 'English', flag: '🇬🇧', code: 'EN' },
+  { id: 'de', label: 'Deutsch', flag: '🇩🇪', code: 'DE' },
+  { id: 'es', label: 'Español', flag: '🇪🇸', code: 'ES' },
+  { id: 'fr', label: 'Français', flag: '🇫🇷', code: 'FR' },
 ];
 
 export const LOCALE_TO_INTL: Record<Locale, string> = {
@@ -89,6 +94,9 @@ export type StringKey =
   // --- Plugin UI chrome ---
   | 'uiMarket'
   | 'uiSurface'
+  | 'uiAppearance'
+  | 'uiAppearanceLight'
+  | 'uiAppearanceDark'
   | 'uiRefresh'
   | 'uiSearchPlaceholder'
   | 'uiSearchClear'
@@ -189,8 +197,8 @@ export type StringKey =
   | 'uiHelpDropBody'
   | 'uiHelpDragTitle'
   | 'uiHelpDragBody'
-  | 'uiHelpPopulateTitle'
-  | 'uiHelpPopulateBody'
+  | 'uiHelpReplaceTitle'
+  | 'uiHelpReplaceBody'
   | 'uiHelpPaletteTitle'
   | 'uiHelpPaletteBody'
   | 'uiHelpMultiTitle'
@@ -277,6 +285,9 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'House',
     uiMarket: 'Market',
     uiSurface: 'Surface',
+    uiAppearance: 'Appearance',
+    uiAppearanceLight: 'Light',
+    uiAppearanceDark: 'Dark',
     uiRefresh: 'Refresh selected cards (re-render against current data)',
     uiSearchPlaceholder: 'Search property, city or country',
     uiSearchClear: 'Clear search',
@@ -376,8 +387,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHelpDropBody: 'Pick a property and click the Drop button — it lands at the canvas centre.',
     uiHelpDragTitle: 'Drag onto canvas',
     uiHelpDragBody: 'Grab any tile and drag it onto the canvas to drop a card at the cursor.',
-    uiHelpPopulateTitle: 'Populate #fields',
-    uiHelpPopulateBody: 'Select a single text/shape named #title, #image, #pricePerNight (or a frame containing them) and drop — the plugin fills it in place.',
+    uiHelpReplaceTitle: 'Replace a frame',
+    uiHelpReplaceBody: 'Select an empty placeholder frame (or an existing HomeDrop card) and click Drop to swap it for the new property at the same canvas position. Same trick works on drag.',
     uiHelpPaletteTitle: 'Command palette',
     uiHelpPaletteBody: 'Open with ⌘K (Ctrl+K). Switch mode, platform, locale, theme, presets — or run Drop / Random / Refresh / Find all.',
     uiHelpMultiTitle: 'Multi-select',
@@ -463,6 +474,9 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'Haus',
     uiMarket: 'Markt',
     uiSurface: 'Oberfläche',
+    uiAppearance: 'Darstellung',
+    uiAppearanceLight: 'Hell',
+    uiAppearanceDark: 'Dunkel',
     uiRefresh: 'Ausgewählte Karten aktualisieren (mit aktuellen Daten neu rendern)',
     uiSearchPlaceholder: 'Unterkunft, Stadt oder Land suchen',
     uiSearchClear: 'Suche löschen',
@@ -562,8 +576,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHelpDropBody: 'Unterkunft wählen und auf Ablegen klicken — die Karte landet in der Canvas-Mitte.',
     uiHelpDragTitle: 'Auf Canvas ziehen',
     uiHelpDragBody: 'Beliebiges Feld greifen und auf das Canvas ziehen, um eine Karte am Cursor abzulegen.',
-    uiHelpPopulateTitle: '#fields füllen',
-    uiHelpPopulateBody: 'Eine Text-/Form-Ebene namens #title, #image, #pricePerNight (oder einen Frame mit solchen) markieren und ablegen — der Plugin füllt sie an Ort und Stelle.',
+    uiHelpReplaceTitle: 'Frame ersetzen',
+    uiHelpReplaceBody: 'Einen leeren Platzhalter-Frame (oder eine vorhandene HomeDrop-Karte) markieren und auf Ablegen klicken — sie wird an derselben Stelle durch die neue Unterkunft ersetzt. Funktioniert auch per Drag.',
     uiHelpPaletteTitle: 'Befehlspalette',
     uiHelpPaletteBody: 'Mit ⌘K (Strg+K) öffnen. Modus, Plattform, Sprache, Theme, Presets wechseln — oder Drop / Zufall / Aktualisieren / Alle finden.',
     uiHelpMultiTitle: 'Mehrfachauswahl',
@@ -649,6 +663,9 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'Casa',
     uiMarket: 'Mercado',
     uiSurface: 'Superficie',
+    uiAppearance: 'Apariencia',
+    uiAppearanceLight: 'Claro',
+    uiAppearanceDark: 'Oscuro',
     uiRefresh: 'Actualizar las tarjetas seleccionadas (volver a renderizar con los datos actuales)',
     uiSearchPlaceholder: 'Buscar propiedad, ciudad o país',
     uiSearchClear: 'Limpiar búsqueda',
@@ -748,8 +765,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHelpDropBody: 'Selecciona una propiedad y pulsa Soltar — aparece en el centro del lienzo.',
     uiHelpDragTitle: 'Arrastrar al lienzo',
     uiHelpDragBody: 'Arrastra cualquier tarjeta al lienzo para soltarla bajo el cursor.',
-    uiHelpPopulateTitle: 'Rellenar #fields',
-    uiHelpPopulateBody: 'Selecciona una capa de texto/forma llamada #title, #image, #pricePerNight (o un frame con ellas) y suelta — el plugin la rellena.',
+    uiHelpReplaceTitle: 'Reemplazar un frame',
+    uiHelpReplaceBody: 'Selecciona un frame de marcador (o una tarjeta HomeDrop existente) y pulsa Soltar — se cambia por la nueva propiedad en la misma posición. También funciona arrastrando.',
     uiHelpPaletteTitle: 'Paleta de comandos',
     uiHelpPaletteBody: 'Abre con ⌘K (Ctrl+K). Cambia modo, plataforma, idioma, tema, presets — o ejecuta Soltar / Aleatorio / Actualizar / Buscar todo.',
     uiHelpMultiTitle: 'Selección múltiple',
@@ -835,6 +852,9 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'Maison',
     uiMarket: 'Marché',
     uiSurface: 'Surface',
+    uiAppearance: 'Apparence',
+    uiAppearanceLight: 'Clair',
+    uiAppearanceDark: 'Sombre',
     uiRefresh: 'Actualiser les fiches sélectionnées (re-rendre avec les données actuelles)',
     uiSearchPlaceholder: 'Rechercher logement, ville ou pays',
     uiSearchClear: 'Effacer la recherche',
@@ -934,8 +954,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHelpDropBody: 'Choisissez une propriété et cliquez sur Déposer — elle atterrit au centre du canevas.',
     uiHelpDragTitle: 'Glisser sur le canevas',
     uiHelpDragBody: 'Saisissez une carte et glissez-la sur le canevas pour déposer une fiche au curseur.',
-    uiHelpPopulateTitle: 'Remplir les #fields',
-    uiHelpPopulateBody: 'Sélectionnez un calque texte/forme nommé #title, #image, #pricePerNight (ou un frame contenant ces calques) et déposez — le plugin remplit sur place.',
+    uiHelpReplaceTitle: 'Remplacer un frame',
+    uiHelpReplaceBody: 'Sélectionnez un frame placeholder (ou une fiche HomeDrop existante) et cliquez sur Déposer — il est remplacé par la nouvelle propriété au même endroit. Fonctionne aussi en glisser-déposer.',
     uiHelpPaletteTitle: 'Palette de commandes',
     uiHelpPaletteBody: 'Ouvrez avec ⌘K (Ctrl+K). Changez de mode, plateforme, langue, thème, preset — ou lancez Déposer / Aléatoire / Actualiser / Tout trouver.',
     uiHelpMultiTitle: 'Sélection multiple',

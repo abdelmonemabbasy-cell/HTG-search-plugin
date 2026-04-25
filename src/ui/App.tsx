@@ -8,6 +8,7 @@ import type {
   InsertHandler,
   InsertMode,
   MultiLayout,
+  Appearance,
   InsertedHandler,
   ToastMessage,
   LoadedPayload,
@@ -29,13 +30,10 @@ import { t } from '@shared/locales';
 import type { Platform } from '@shared/platforms';
 import { defaultOffersSource, type OffersSource, type SearchQuery } from './offers-source';
 import { Header } from './components/Header';
-import { SearchBar } from './components/SearchBar';
-import { FilterBar, type Filters } from './components/FilterBar';
-import { SortBar } from './components/SortBar';
 import { LocaleBar } from './components/LocaleBar';
-import { ProductTile } from './components/ProductTile';
-import { DropCta } from './components/DropCta';
-import { DetailView } from './components/DetailView';
+import { LevelDetail } from './components/LevelDetail';
+import { LevelSearch } from './components/LevelSearch';
+import type { Filters } from './components/FilterBar';
 import { ResizeHandle } from './components/ResizeHandle';
 import { Toast } from './components/Toast';
 import { CommandPalette, type PaletteCommand } from './components/CommandPalette';
@@ -50,6 +48,7 @@ const DEFAULT_STATE: UiState = {
   gridColumns: 2,
   locale: 'en',
   platform: 'web',
+  appearance: 'light',
   filters: {},
   theme: 'auto',
 };
@@ -86,6 +85,7 @@ export function App(props: LoadedPayload) {
   const [gridColumns, setGridColumns] = useState<number>(saved.gridColumns);
   const [locale, setLocale] = useState<Locale>(saved.locale);
   const [platform, setPlatform] = useState<Platform>(saved.platform);
+  const [appearance, setAppearance] = useState<Appearance>(saved.appearance ?? 'light');
   const [filters, setFilters] = useState<Filters>(saved.filters);
   const [theme, setTheme] = useState<Theme>(saved.theme ?? 'auto');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -229,6 +229,7 @@ export function App(props: LoadedPayload) {
         gridColumns,
         locale,
         platform,
+        appearance,
         filters,
         theme,
         favourites: Array.from(favourites),
@@ -243,6 +244,7 @@ export function App(props: LoadedPayload) {
     gridColumns,
     locale,
     platform,
+    appearance,
     filters,
     theme,
     favourites,
@@ -261,16 +263,15 @@ export function App(props: LoadedPayload) {
   }, [offers]);
 
   /**
-   * Tile-click handler. Selection is always multi-capable; the engine
-   * picks a single-card vs list-vs-grid layout from selection count
-   * + multiLayout preference, so there is no longer a "single mode".
+   * Tile-click handler. Mirrors the section-grid behaviour in
+   * DetailView: plain click toggles the tile in/out of the selection
+   * (no replace-on-click), so clicking three tiles in a row gives a
+   * three-tile selection. Selection count drives the engine mode
+   * (single vs list vs grid) — there is no separate "single mode".
    *
-   * - plain click: replaces the selection with this id (one-of-N feel
-   *   when the user just wants one) and moves the anchor.
-   * - shift + click: extends the existing selection to a range from
-   *   the anchor to id.
-   * - cmd/ctrl + click: additively toggles id without moving the
-   *   anchor — useful for picking out a few specific tiles.
+   * - plain click / cmd / ctrl click: toggle this id in/out. Plain
+   *   click also moves the anchor; cmd / ctrl deliberately doesn't.
+   * - shift + click: add the [anchor, id] range to the selection.
    */
   const toggle = (id: string, e?: MouseEvent) => {
     const shift = !!e && e.shiftKey;
@@ -292,20 +293,13 @@ export function App(props: LoadedPayload) {
       }
     }
 
-    if (meta) {
-      // Additive toggle, anchor stays put.
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-      return;
-    }
-
-    // Plain click: replace the selection with just this id.
-    setSelectedIds((prev) => (prev.size === 1 && prev.has(id) ? new Set() : new Set([id])));
-    setAnchorId(id);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    if (!meta) setAnchorId(id);
   };
 
   const toggleFavourite = (id: string) => {
@@ -355,6 +349,7 @@ export function App(props: LoadedPayload) {
       gridColumns,
       locale,
       platform,
+      appearance,
     });
   };
 
@@ -366,6 +361,7 @@ export function App(props: LoadedPayload) {
       sections: Array.from(selectedSections),
       locale,
       platform,
+      appearance,
     });
   };
 
@@ -401,19 +397,21 @@ export function App(props: LoadedPayload) {
 
   const onTileDragStart = (offer: Offer, e: DragEvent) => {
     if (!e.dataTransfer) return;
-    // Set the MIME types Figma's figma.on('drop') handler dispatches on.
-    // We send three flavours so downstream code can differentiate single
-    // vs multi vs section drops without having to inspect the body shape.
+    // Set the MIME types Figma's figma.on('drop') handler dispatches on
+    // FIRST so that even if the drag-image setup throws, the data is on
+    // the event when it lands on the canvas. Three flavours so the main
+    // thread can differentiate single vs multi vs section drops without
+    // inspecting the body.
     const isMulti = selectedIds.size > 1 && selectedIds.has(offer.id);
     if (isMulti) {
       const ids = Array.from(selectedIds);
-      const body = { offerIds: ids, locale, platform, mode: multiLayout };
+      const body = { offerIds: ids, locale, platform, appearance, mode: multiLayout };
       e.dataTransfer.setData(
         'application/htg-offer-multi',
         JSON.stringify(body),
       );
     } else {
-      const body = { offerId: offer.id, locale, platform };
+      const body = { offerId: offer.id, locale, platform, appearance };
       e.dataTransfer.setData(
         'application/htg-offer',
         JSON.stringify(body),
@@ -422,16 +420,19 @@ export function App(props: LoadedPayload) {
     // text/plain fallback so non-Figma drop targets get something readable.
     e.dataTransfer.setData('text/plain', offer.title);
     e.dataTransfer.effectAllowed = 'copy';
-    attachDragImage(e, offer, locale);
+    // Custom drag image. Wrapped in try/catch — if it fails, the drag
+    // still proceeds with the browser's default tile snapshot rather
+    // than aborting the whole drag.
+    try { attachDragImage(e, offer, locale); } catch {}
   };
 
   const onSectionDragStart = (offer: Offer, kind: SectionKind, e: DragEvent) => {
     if (!e.dataTransfer) return;
-    const body = { offerId: offer.id, sectionKind: kind, locale, platform };
+    const body = { offerId: offer.id, sectionKind: kind, locale, platform, appearance };
     e.dataTransfer.setData('application/htg-section', JSON.stringify(body));
     e.dataTransfer.setData('text/plain', `${kind} · ${offer.title}`);
     e.dataTransfer.effectAllowed = 'copy';
-    attachSectionDragImage(e, sectionDragLabel(kind, locale));
+    try { attachSectionDragImage(e, sectionDragLabel(kind, locale)); } catch {}
   };
 
   // Canvas drops are handled exclusively by the main thread's
@@ -539,6 +540,7 @@ export function App(props: LoadedPayload) {
       multiLayout,
       platform,
       locale,
+      appearance,
       gridColumns,
       sort,
     };
@@ -554,6 +556,7 @@ export function App(props: LoadedPayload) {
     setMultiLayout(p.multiLayout);
     setPlatform(p.platform);
     setLocale(p.locale);
+    if (p.appearance) setAppearance(p.appearance);
     setGridColumns(p.gridColumns);
     setSort(p.sort);
   };
@@ -635,13 +638,14 @@ export function App(props: LoadedPayload) {
     setPresets((all) => all.filter((p) => p.id !== id));
 
   // Build a smart default preset name from the live settings so the
-  // user can usually just press Enter ("Web · EN · 3 cols").
+  // user can usually just press Enter ("Web · EN · Light · 3 cols").
   const platformLabel = (() => {
     const map: Record<Platform, string> = { web: 'Web', ios: 'iOS', android: 'Android' };
     return map[platform];
   })();
+  const appearanceLabel = appearance === 'dark' ? 'Dark' : 'Light';
   const layoutLabel = multiLayout === 'grid' ? `${gridColumns} cols` : 'list';
-  const presetDefaultName = `${platformLabel} · ${locale.toUpperCase()} · ${layoutLabel}`;
+  const presetDefaultName = `${platformLabel} · ${locale.toUpperCase()} · ${appearanceLabel} · ${layoutLabel}`;
 
   const headerProps = {
     onRefresh: () => emit<RefreshHandler>('REFRESH'),
@@ -683,59 +687,6 @@ export function App(props: LoadedPayload) {
     </Fragment>
   );
 
-  if (level === 'detail' && detailOffer) {
-    return (
-      <div class={styles.root}>
-        <Header {...headerProps} />
-        <LocaleBar
-          locale={locale}
-          onLocaleChange={setLocale}
-          platform={platform}
-          onPlatformChange={setPlatform}
-        />
-        <DetailView
-          offer={detailOffer}
-          selected={selectedSections}
-          onToggle={toggleSection}
-          onBack={backToSearch}
-          onSelectAll={selectAllSections}
-          onClear={clearAllSections}
-          onSectionDragStart={(kind, e) => onSectionDragStart(detailOffer, kind, e)}
-          onCardDragStart={(e) => onTileDragStart(detailOffer, e)}
-          locale={locale}
-        />
-        <div class={styles.footer}>
-          <div class={`${styles.footerInfo} ${selectedSections.size > 0 ? styles.footerInfoActive : ''}`}>
-            {selectedSections.size === 0
-              ? t('uiPickSectionsToInsert', locale)
-              : selectedSections.size === 1
-                ? t('uiNSection', locale, { n: 1 })
-                : t('uiNSections', locale, { n: selectedSections.size })}
-          </div>
-          <button
-            class={`${styles.btn} ${styles.btnPrimary}`}
-            onClick={insertSections}
-            disabled={selectedSections.size === 0}
-          >
-            {selectedSections.size === 0
-              ? t('uiSelectSections', locale)
-              : selectedSections.size === 1
-                ? t('uiInsertSection', locale)
-                : t('uiInsertNSections', locale, { n: selectedSections.size })}
-          </button>
-        </div>
-        <ResizeHandle
-          size={uiSize}
-          min={MIN_SIZE}
-          max={MAX_SIZE}
-          onResize={handleResize}
-          onCommit={handleResizeCommit}
-        />
-        {overlays}
-      </div>
-    );
-  }
-
   return (
     <div class={styles.root}>
       <Header {...headerProps} />
@@ -744,149 +695,60 @@ export function App(props: LoadedPayload) {
         onLocaleChange={setLocale}
         platform={platform}
         onPlatformChange={setPlatform}
-      />
-      <SearchBar value={search} onChange={setSearch} locale={locale} />
-      <FilterBar
-        filters={filters}
-        onChange={setFilters}
-        favouritesCount={favourites.size}
-        locale={locale}
-      />
-      <SortBar
-        count={visible.length}
-        total={offers.length}
-        sort={sort}
-        onSortChange={setSort}
-        multiLayout={multiLayout}
-        gridColumns={gridColumns}
-        onGridColumnsChange={setGridColumns}
-        onRandomize={randomize}
-        locale={locale}
+        appearance={appearance}
+        onAppearanceChange={setAppearance}
       />
 
-      {showBulkBar && (
-        <div class={styles.bulkBar}>
-          <span class={styles.bulkBarText}>
-            {t('uiNSelected', locale, { n: count })}
-          </span>
-          <div class={styles.bulkBarActions}>
-            <button
-              class={styles.bulkBarBtn}
-              onClick={selectAllVisible}
-              disabled={count === visible.length}
-            >
-              {t('uiSelectAllN', locale, { n: visible.length })}
-            </button>
-            <button
-              class={styles.bulkBarBtnGhost}
-              onClick={clearSelection}
-              disabled={count === 0}
-            >
-              {t('uiClear', locale)}
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div class={styles.scroll}>
-        {loading ? (
-          <div
-            class={styles.grid}
-            style={{
-              gridTemplateColumns: `repeat(${
-                multiLayout === 'grid' ? Math.max(2, Math.min(4, gridColumns)) : 2
-              }, 1fr)`,
-            }}
-          >
-            {Array.from({ length: multiLayout === 'grid' ? Math.max(2, Math.min(4, gridColumns)) * 2 : 6 }).map((_, i) => (
-              <div key={`skeleton-${i}`} class={styles.tileSkeleton}>
-                <div class={styles.tileSkeletonImg} />
-                <div class={styles.tileSkeletonBody}>
-                  <div class={styles.tileSkeletonLine} />
-                  <div class={`${styles.tileSkeletonLine} ${styles.tileSkeletonLineShort}`} />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : loadError ? (
-          <div class={styles.empty}>
-            <div class={styles.emptyIcon}>!</div>
-            <div class={styles.emptyTitle}>{t('uiLoadErrorTitle', locale)}</div>
-            <div class={styles.emptySubtitle}>{loadError}</div>
-            <button
-              class={styles.emptyBtn}
-              onClick={() => setReloadTick((n) => n + 1)}
-            >
-              {t('uiLoadErrorRetry', locale)}
-            </button>
-          </div>
-        ) : visible.length === 0 ? (
-          <div class={styles.empty}>
-            <div class={styles.emptyIcon}>⌕</div>
-            <div class={styles.emptyTitle}>{t('uiNoMatchTitle', locale)}</div>
-            <div class={styles.emptySubtitle}>
-              {t('uiNoMatchHint', locale)}
-            </div>
-            {hasActiveFilters && (
-              <button class={styles.emptyBtn} onClick={clearAllFilters}>
-                {t('uiClearAllFilters', locale)}
-              </button>
-            )}
-          </div>
-        ) : (
-          <div
-            class={styles.grid}
-            style={{
-              gridTemplateColumns: `repeat(${
-                multiLayout === 'grid' ? Math.max(2, Math.min(4, gridColumns)) : 2
-              }, 1fr)`,
-            }}
-          >
-            {visible.map((o) => (
-              <ProductTile
-                key={o.id}
-                offer={o}
-                selected={selectedIds.has(o.id)}
-                favourite={favourites.has(o.id)}
-                pulse={pulseId === o.id}
-                onToggle={(e) => toggle(o.id, e)}
-                onToggleFavourite={() => toggleFavourite(o.id)}
-                onOpen={() => openDetail(o.id)}
-                onDragStart={(e) => onTileDragStart(o, e)}
-                locale={locale}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div class={styles.footer}>
-        <div class={`${styles.footerInfo} ${count > 0 ? styles.footerInfoActive : ''}`}>
-          {count === 0
-            ? t('uiHintClickSingle', locale)
-            : t('uiEnterToInsert', locale, { n: count })}
-        </div>
-        {lastUndo && (
-          <button
-            class={styles.footerUndoBtn}
-            onClick={() => {
-              emit<UndoHandler>('UNDO', { nodeIds: lastUndo.nodeIds });
-              setLastUndo(null);
-            }}
-            title={lastUndo.label}
-          >
-            ↺ {t('uiToastUndo', locale)}
-          </button>
-        )}
-        <DropCta
-          count={count}
-          multiLayout={multiLayout}
-          onMultiLayoutChange={setMultiLayout}
-          onDrop={() => insert()}
-          label={insertLabel()}
+      {level === 'detail' && detailOffer ? (
+        <LevelDetail
+          offer={detailOffer}
+          selectedSections={selectedSections}
+          toggleSection={toggleSection}
+          selectAllSections={selectAllSections}
+          clearAllSections={clearAllSections}
+          onBack={backToSearch}
+          onSectionDragStart={(kind: SectionKind, e: DragEvent) => onSectionDragStart(detailOffer, kind, e)}
+          onCardDragStart={(e: DragEvent) => onTileDragStart(detailOffer, e)}
+          onInsertSections={insertSections}
           locale={locale}
         />
-      </div>
+      ) : (
+        <LevelSearch
+          offers={offers}
+          visible={visible}
+          loading={loading}
+          loadError={loadError}
+          onRetry={() => setReloadTick((n) => n + 1)}
+          search={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          onFiltersChange={setFilters}
+          favouritesCount={favourites.size}
+          sort={sort}
+          onSortChange={setSort}
+          multiLayout={multiLayout}
+          onMultiLayoutChange={setMultiLayout}
+          gridColumns={gridColumns}
+          onGridColumnsChange={setGridColumns}
+          selectedIds={selectedIds}
+          favourites={favourites}
+          pulseId={pulseId}
+          onToggle={toggle}
+          onToggleFavourite={toggleFavourite}
+          onOpenDetail={openDetail}
+          onTileDragStart={onTileDragStart}
+          onSelectAllVisible={selectAllVisible}
+          onClearSelection={clearSelection}
+          hasActiveFilters={hasActiveFilters}
+          onClearAllFilters={clearAllFilters}
+          insertLabel={insertLabel()}
+          onInsert={() => insert()}
+          onRandomize={randomize}
+          lastUndo={lastUndo}
+          onClearLastUndo={() => setLastUndo(null)}
+          locale={locale}
+        />
+      )}
 
       <ResizeHandle
         size={uiSize}

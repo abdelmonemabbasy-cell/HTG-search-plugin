@@ -173,8 +173,8 @@ locale. When `ApiOffersSource` lands:
 - The `parseApiOffer(raw)` helper in `src/ui/offers-source.ts` becomes
   the single mapping layer between API response shape and `Offer`.
 
-The card renderer, populate path, and layer-naming spec don't change. They
-already consume a single-locale `Offer`; today's `localize()` just produces
+The card renderer and the section builders don't change. They already
+consume a single-locale `Offer`; today's `localize()` just produces
 that shape from the multi-locale JSON.
 
 ## Edge-case coverage in `products.json`

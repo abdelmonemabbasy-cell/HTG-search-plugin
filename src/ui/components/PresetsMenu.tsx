@@ -105,7 +105,7 @@ export function PresetsMenu({ presets, onApply, onSave, onDelete, defaultName, l
                 >
                   <span class={styles.presetsRowLabel}>{p.label}</span>
                   <span class={styles.presetsRowMeta}>
-                    {p.multiLayout} · {p.platform} · {p.locale.toUpperCase()}
+                    {p.multiLayout} · {p.platform} · {p.locale.toUpperCase()}{p.appearance ? ` · ${p.appearance}` : ''}
                   </span>
                 </button>
                 <button

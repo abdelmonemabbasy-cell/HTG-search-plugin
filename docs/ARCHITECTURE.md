@@ -20,7 +20,7 @@ They talk via `postMessage`, wrapped here by `emit` / `on` from
 │  │  Preact app   │   emit   │   QuickJS     │       │
 │  │  styles.css   │────────▶│   figma.*      │       │
 │  │  ProductTile  │◀──── on  │   buildCard    │       │
-│  │  PreviewModal │          │   populate     │       │
+│  │  DetailView   │          │   replaceFrame │       │
 │  └───────────────┘          └───────────────┘       │
 │          ▲                         │                │
 │          │                         ▼                │
@@ -38,8 +38,7 @@ src/
 ├── main/                  # main-thread (QuickJS)
 │   ├── index.ts           # entry — showUI + message router
 │   ├── generate.ts        # platform-aware card builder (web + iOS + Android)
-│   ├── populate.ts        # #fieldName layer populator (locale-aware)
-│   ├── brand.ts           # BRAND, FONT, VIEW_DEAL_GRADIENT tokens
+│   ├── brand.ts           # BRAND (Appearance Proxy), FONT, VIEW_DEAL_GRADIENT
 │   ├── icons.ts           # inline SVGs + placeIcon()
 │   ├── images.ts          # loadImageHash, applyImageFill
 │   ├── fonts.ts           # loadBrandFonts (parallel + memoised)
@@ -119,15 +118,15 @@ from it.
        count <= 1 → 'single'; count > 1 → multiLayout.
 
 5. Main receives INSERT:
-   - Single offer + selection has a single #field text/shape →
-     populateNode (fill that one layer).
-   - Single offer + selection has a frame with #field descendants →
-     populateSelection (fill them all).
+   - Single offer + selection contains a replaceable frame
+     (FRAME / COMPONENT / INSTANCE — including a previously-inserted
+     HomeDrop card) → replaceFrame swaps it for the new card at the
+     same canvas position, inheriting parent + auto-layout index.
    - Otherwise call insertCards(offers, mode, gridColumns):
      - single → append each card to page at viewport centre
      - list   → vertical auto-layout container of cards
      - grid   → horizontal wrap auto-layout container of cards
-   - Stamp setPluginData('htgOfferId', ...) on every root.
+   - Stamp setPluginData('htgOfferId', ..., 'htgAppearance', ...).
    - figma.viewport.scrollAndZoomIntoView + figma.notify
 
 6. Main emits `INSERTED` back to the UI with the top-level node ids
@@ -140,7 +139,7 @@ from it.
 | Event             | Fired by Figma when…                              | Side-effects                                                                                                         |
 |-------------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
 | `selectionchange` | Any selection mutation on the current page        | Calls `pushHighlight()` → emits `HIGHLIGHT_OFFER` so the matching tile pulses in the plugin grid. |
-| `drop`            | The user releases a drag from the plugin iframe   | Reads `event.items` for the three MIME types (`application/htg-offer`, `-multi`, `-section`). For offer drops, inspects `event.node`: a `#field` text/shape → `populateNode`; a frame with `#field` descendants → `populateSelection`; anything else → `landAtDropEvent` (append-as-child or land-at-coords). Returns `false` so Figma doesn't insert its own text node. |
+| `drop`            | The user releases a drag from the plugin iframe   | Reads `event.items` for the three MIME types (`application/htg-offer`, `-multi`, `-section`). For single-offer drops: if `event.node` is a replaceable frame, swap it via `replaceFrame`; otherwise land via `landAtDropEvent` (append-as-child or land-at-cursor). Returns `false` so Figma doesn't insert its own text node. |
 
 ### Message channels
 
@@ -292,34 +291,38 @@ const [source] = useState<OffersSource>(() => new ApiOffersSource(API_URL));
 
 Plus deleting `localize()` and the `i18n` block on `Offer` (the API
 returns localized data directly via `Accept-Language` / `?locale=de`).
-The card renderer, populate path, locale selector, drop banner — all
+The card renderer, the locale selector, the drop routing — all
 unchanged.
 
-## Drop routing
+## Drop routing — replace mode
 
 Both the click CTA (via `INSERT`) and the drag-onto-canvas path (via
-`figma.on('drop')`) share the same target inference — a frame's
-identity is read either from the page's current selection (CTA) or
-from `event.node` (drag).
+`figma.on('drop')`) share the same target inference — a frame is
+read either from the page's current selection (CTA) or from
+`event.node` (drag).
 
 ```
-single #field text/shape selected      → populateNode (fill that one layer)
-frame with #field descendants selected → populateSelection (fill all matches)
-plain frame selected (drag only)       → landAtDropEvent (append as child)
-no selection                           → viewport / cursor (drop a fresh card)
+replaceable frame in selection (or dropped on)  → replaceFrame
+   (FRAME / COMPONENT / INSTANCE, including
+    previously-inserted HomeDrop cards)            (swap at same XY)
+no frame                                          → land at viewport
+                                                    centre / cursor
 ```
 
-`populateNode(node, offer, locale)` and the descendant-walking
-`populateSelection(root, ...)` both live in `src/main/populate.ts`,
-along with `singleFieldNodeInSelection(selection)` and
-`firstTargetInSelection(selection)`. `hasFieldNames(target)` short-
-circuits via `findOne` so it returns as soon as one matching layer
-is found.
+`replaceFrame(placeholder, child)` in `src/main/index.ts` inherits
+the placeholder's parent + auto-layout index, copies its `x/y`,
+appends the new card, then removes the placeholder. The auto-layout
+inheritance means a card swapped inside an existing list/grid
+container slots back into the same slot without breaking the layout.
 
-There is no Replace-banner / Replace-toggle / `fillIntoTarget`
-plumbing in 0.9 — that path was removed when the legacy `DROP`
-channel was deleted. Designers who want to swap a frame's contents
-should clear the frame manually and drop into it.
+`isReplaceableFrame(node)` is intentionally lax: any FRAME / COMPONENT
+/ INSTANCE qualifies, including a previously-inserted HomeDrop card.
+That's deliberate — swapping one property card for another is one of
+the most common reasons designers reach for the plugin.
+
+The `#fieldName` populate path was removed in 0.10. When v2 brings
+the HomeToGo design-system component, the same replace flow becomes
+the path for filling that component's named slots.
 
 ## Keeping v2 cheap
 
