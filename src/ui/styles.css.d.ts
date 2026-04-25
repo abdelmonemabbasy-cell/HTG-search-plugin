@@ -119,6 +119,7 @@ declare const styles: {
   readonly "paletteOverlay": string;
   readonly "pillBtn": string;
   readonly "pillBtnActive": string;
+  readonly "pillBtnIcon": string;
   readonly "pillGroup": string;
   readonly "presetsDropdown": string;
   readonly "presetsEmpty": string;
