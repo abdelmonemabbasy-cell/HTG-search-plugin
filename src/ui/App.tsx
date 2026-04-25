@@ -6,6 +6,7 @@ import type {
   DropHandler,
   DropPayload,
   FindAllHandler,
+  HighlightOfferHandler,
   InsertHandler,
   InsertMode,
   InsertResultHandler,
@@ -17,6 +18,8 @@ import type {
   SaveStateHandler,
   SaveUiSizeHandler,
   SectionKind,
+  SelectionTargetHandler,
+  SelectionTargetInfo,
   SortKey,
   ThemeMode,
   UiSize,
@@ -98,6 +101,12 @@ export function App(props: LoadedPayload) {
   const [confettiTrigger, setConfettiTrigger] = useState(0);
   const firstDropFiredRef = useRef(false);
 
+  // v0.7 chunk 3: canvas → UI awareness
+  const [pulseId, setPulseId] = useState<string | null>(null);
+  const pulseTimerRef = useRef<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<SelectionTargetInfo | null>(null);
+  const [replaceOnDrop, setReplaceOnDrop] = useState<boolean>(saved.replaceOnDrop ?? false);
+
   const offers = props.offers;
 
   // Apply theme on mount and whenever it changes.
@@ -119,6 +128,44 @@ export function App(props: LoadedPayload) {
         firstDropFiredRef.current = true;
         setConfettiTrigger((t) => t + 1);
       }
+    });
+    return () => off();
+  }, []);
+
+  // Canvas selection echo: when a tagged HTG card is selected on the
+  // canvas, the corresponding tile gets a brief outline pulse so the
+  // designer can see which property the canvas selection refers to.
+  // We also scroll the tile into view if it isn't already.
+  useEffect(() => {
+    const off = on<HighlightOfferHandler>('HIGHLIGHT_OFFER', ({ offerId }) => {
+      if (!offerId) {
+        setPulseId(null);
+        return;
+      }
+      setPulseId(offerId);
+      if (pulseTimerRef.current !== null) {
+        window.clearTimeout(pulseTimerRef.current);
+      }
+      pulseTimerRef.current = window.setTimeout(() => {
+        setPulseId(null);
+      }, 1400);
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-offer-id="${offerId}"]`);
+        if (el && 'scrollIntoView' in el) {
+          (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    });
+    return () => {
+      off();
+      if (pulseTimerRef.current !== null) window.clearTimeout(pulseTimerRef.current);
+    };
+  }, []);
+
+  // Drop target info — drives the "Drop into 'X'" banner.
+  useEffect(() => {
+    const off = on<SelectionTargetHandler>('SELECTION_TARGET', (target) => {
+      setDropTarget(target);
     });
     return () => off();
   }, []);
@@ -693,6 +740,7 @@ export function App(props: LoadedPayload) {
                 offer={o}
                 selected={selectedIds.has(o.id)}
                 favourite={favourites.has(o.id)}
+                pulse={pulseId === o.id}
                 onToggle={(e) => toggle(o.id, e)}
                 onToggleFavourite={() => toggleFavourite(o.id)}
                 onMouseEnter={(rect) => onTileHoverEnter(o.id, rect)}
