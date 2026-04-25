@@ -134,6 +134,7 @@ declare const styles: {
   readonly "sortBar": string;
   readonly "sortBarRight": string;
   readonly "sortCount": string;
+  readonly "sortRandomizeBtn": string;
   readonly "sortSelect": string;
   readonly "sortSelectChevron": string;
   readonly "sortSelectWrap": string;

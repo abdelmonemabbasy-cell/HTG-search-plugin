@@ -36,7 +36,7 @@ export const SECTION_METRICS: Record<Platform, SectionMetrics> = {
   ios: {
     width: 343,
     padding: 20,
-    radius: 0,
+    radius: 16,
     gap: 12,
     headingSize: 17,
     bodySize: 14,
@@ -47,7 +47,7 @@ export const SECTION_METRICS: Record<Platform, SectionMetrics> = {
   android: {
     width: 360,
     padding: 20,
-    radius: 0,
+    radius: 12,
     gap: 12,
     headingSize: 17,
     bodySize: 14,

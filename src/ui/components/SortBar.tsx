@@ -13,6 +13,7 @@ interface Props {
   mode: InsertMode;
   gridColumns: number;
   onGridColumnsChange: (n: number) => void;
+  onRandomize: () => void;
   locale: Locale;
 }
 
@@ -32,6 +33,7 @@ export function SortBar({
   mode,
   gridColumns,
   onGridColumnsChange,
+  onRandomize,
   locale,
 }: Props) {
   return (
@@ -49,6 +51,21 @@ export function SortBar({
         )}
       </span>
       <div class={styles.sortBarRight}>
+        <button
+          class={styles.sortRandomizeBtn}
+          onClick={onRandomize}
+          title={t('uiRandomizeTooltip', locale)}
+          aria-label={t('uiRandomize', locale)}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <circle cx="8" cy="8" r="1" fill="currentColor" />
+            <circle cx="16" cy="8" r="1" fill="currentColor" />
+            <circle cx="8" cy="16" r="1" fill="currentColor" />
+            <circle cx="16" cy="16" r="1" fill="currentColor" />
+            <circle cx="12" cy="12" r="1" fill="currentColor" />
+          </svg>
+        </button>
         {mode === 'grid' && (
           <div class={styles.colStepper}>
             {[2, 3, 4].map((n) => (

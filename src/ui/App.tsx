@@ -227,10 +227,15 @@ export function App(props: LoadedPayload) {
 
   /**
    * Tile-click handler with shift/cmd multi-select.
-   * - single mode: always one-of-N (the modifier keys are no-ops)
-   * - cmd/ctrl + click: toggle id, set anchor to id
-   * - shift + click: select range [anchor, id] in `visible` order
-   * - plain click: toggle id (additive in list/grid)
+   *
+   * - single mode: always one-of-N (the modifier keys are no-ops).
+   * - shift + click: select range [anchor, id] in visible order. The
+   *   anchor stays where it was so subsequent shift-clicks pivot
+   *   from the same starting point.
+   * - cmd/ctrl + click: additively toggle id without moving the
+   *   anchor — useful for picking out a few specific tiles.
+   * - plain click: toggle id and move the anchor to id (so the next
+   *   shift-click ranges from here).
    */
   const toggle = (id: string, e?: MouseEvent) => {
     if (mode === 'single') {
@@ -262,8 +267,8 @@ export function App(props: LoadedPayload) {
       else next.add(id);
       return next;
     });
-    if (!shift) setAnchorId(id);
-    void meta;
+    // Plain click moves the anchor; cmd/ctrl deliberately doesn't.
+    if (!shift && !meta) setAnchorId(id);
   };
 
   const toggleFavourite = (id: string) => {
@@ -477,11 +482,14 @@ export function App(props: LoadedPayload) {
     : null;
   const count = selectedIds.size;
 
+  // Plugin's primary CTA reads "Drop" (matching the HomeDrop name);
+  // the underlying message channel is still INSERT for back-compat
+  // with existing plugin-data tags.
   const insertLabel = () => {
     if (count === 0) return t('uiSelectAProperty', locale);
-    if (mode === 'single') return count === 1 ? t('uiInsert', locale) : t('uiInsertN', locale, { n: count });
-    if (mode === 'list') return count === 1 ? t('uiInsertAsList', locale) : t('uiInsertNAsList', locale, { n: count });
-    return count === 1 ? t('uiInsertAsGrid', locale) : t('uiInsertNAsGrid', locale, { n: count });
+    if (mode === 'single') return count === 1 ? t('uiDrop', locale) : t('uiDropN', locale, { n: count });
+    if (mode === 'list') return count === 1 ? t('uiDropAsList', locale) : t('uiDropNAsList', locale, { n: count });
+    return count === 1 ? t('uiDropAsGrid', locale) : t('uiDropNAsGrid', locale, { n: count });
   };
 
   const showBulkBar = level === 'search' && mode !== 'single';
@@ -600,7 +608,7 @@ export function App(props: LoadedPayload) {
     mode,
     onModeChange: handleModeChange,
     onRefresh: () => emit<RefreshHandler>('REFRESH'),
-    onRandomize: randomize,
+    onFindAll: () => emit<FindAllHandler>('FIND_ALL'),
     theme,
     onThemeChange: setTheme,
     locale,
@@ -712,6 +720,7 @@ export function App(props: LoadedPayload) {
         mode={mode}
         gridColumns={gridColumns}
         onGridColumnsChange={setGridColumns}
+        onRandomize={randomize}
         locale={locale}
       />
 

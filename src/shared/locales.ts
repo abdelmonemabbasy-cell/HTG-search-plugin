@@ -1,10 +1,14 @@
 export type Locale = 'en' | 'de' | 'es' | 'fr';
 
+// Plain text codes instead of regional-indicator flag emojis. Some
+// platforms (Windows, certain emoji fonts) render `🇬🇧 🇩🇪 🇪🇸 🇫🇷`
+// as doubled letter blocks (the "doubled-flag" bug); the text codes
+// look correct everywhere and stay short enough for the locale pill.
 export const LOCALES: Array<{ id: Locale; label: string; flag: string }> = [
-  { id: 'en', label: 'English', flag: '🇬🇧' },
-  { id: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { id: 'es', label: 'Español', flag: '🇪🇸' },
-  { id: 'fr', label: 'Français', flag: '🇫🇷' },
+  { id: 'en', label: 'English', flag: 'EN' },
+  { id: 'de', label: 'Deutsch', flag: 'DE' },
+  { id: 'es', label: 'Español', flag: 'ES' },
+  { id: 'fr', label: 'Français', flag: 'FR' },
 ];
 
 export const LOCALE_TO_INTL: Record<Locale, string> = {
@@ -192,7 +196,15 @@ export type StringKey =
   | 'uiPresetNamePrompt'
   | 'uiFavouriteAdd'
   | 'uiFavouriteRemove'
-  | 'uiHoverPeekTitle';
+  | 'uiHoverPeekTitle'
+  | 'uiFindAll'
+  | 'uiFindAllTooltip'
+  | 'uiDrop'
+  | 'uiDropN'
+  | 'uiDropAsList'
+  | 'uiDropNAsList'
+  | 'uiDropAsGrid'
+  | 'uiDropNAsGrid';
 
 export const STRINGS: Record<Locale, Record<StringKey, string>> = {
   en: {
@@ -366,6 +378,14 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiFavouriteAdd: 'Add to favourites',
     uiFavouriteRemove: 'Remove from favourites',
     uiHoverPeekTitle: 'Quick look',
+    uiFindAll: 'Find all',
+    uiFindAllTooltip: 'Find all HomeDrop cards on this page',
+    uiDrop: 'Drop',
+    uiDropN: 'Drop {n}',
+    uiDropAsList: 'Drop as list',
+    uiDropNAsList: 'Drop {n} as list',
+    uiDropAsGrid: 'Drop as grid',
+    uiDropNAsGrid: 'Drop {n} as grid',
   },
   de: {
     ratingOutstanding: 'Hervorragend',
@@ -538,6 +558,14 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiFavouriteAdd: 'Zu Favoriten hinzufügen',
     uiFavouriteRemove: 'Aus Favoriten entfernen',
     uiHoverPeekTitle: 'Kurzansicht',
+    uiFindAll: 'Alle finden',
+    uiFindAllTooltip: 'Alle HomeDrop-Karten auf dieser Seite finden',
+    uiDrop: 'Ablegen',
+    uiDropN: '{n} ablegen',
+    uiDropAsList: 'Als Liste ablegen',
+    uiDropNAsList: '{n} als Liste ablegen',
+    uiDropAsGrid: 'Als Raster ablegen',
+    uiDropNAsGrid: '{n} als Raster ablegen',
   },
   es: {
     ratingOutstanding: 'Excepcional',
@@ -710,6 +738,14 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiFavouriteAdd: 'Añadir a favoritos',
     uiFavouriteRemove: 'Quitar de favoritos',
     uiHoverPeekTitle: 'Vista rápida',
+    uiFindAll: 'Buscar todas',
+    uiFindAllTooltip: 'Buscar todas las tarjetas HomeDrop en esta página',
+    uiDrop: 'Soltar',
+    uiDropN: 'Soltar {n}',
+    uiDropAsList: 'Soltar como lista',
+    uiDropNAsList: 'Soltar {n} como lista',
+    uiDropAsGrid: 'Soltar como cuadrícula',
+    uiDropNAsGrid: 'Soltar {n} como cuadrícula',
   },
   fr: {
     ratingOutstanding: 'Exceptionnel',
@@ -882,6 +918,14 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiFavouriteAdd: 'Ajouter aux favoris',
     uiFavouriteRemove: 'Retirer des favoris',
     uiHoverPeekTitle: 'Aperçu rapide',
+    uiFindAll: 'Tout trouver',
+    uiFindAllTooltip: 'Trouver toutes les fiches HomeDrop sur cette page',
+    uiDrop: 'Déposer',
+    uiDropN: 'Déposer {n}',
+    uiDropAsList: 'Déposer en liste',
+    uiDropNAsList: 'Déposer {n} en liste',
+    uiDropAsGrid: 'Déposer en grille',
+    uiDropNAsGrid: 'Déposer {n} en grille',
   },
 };
 
