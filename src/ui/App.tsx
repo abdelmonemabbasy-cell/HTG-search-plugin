@@ -1,15 +1,21 @@
 import { h } from 'preact';
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { emit } from '@create-figma-plugin/utilities';
+import { emit, on } from '@create-figma-plugin/utilities';
 import type { Offer } from '@shared/types';
 import type {
+  DropHandler,
+  DropPayload,
   InsertHandler,
   InsertMode,
   LoadedPayload,
   RefreshHandler,
+  ResizeHandler,
   SaveStateHandler,
+  SaveUiSizeHandler,
   SectionKind,
   SortKey,
+  ThemeMode,
+  UiSize,
   UiState,
 } from '@shared/messages';
 import type { Locale } from '@shared/locales';
@@ -24,6 +30,8 @@ import { LocaleBar } from './components/LocaleBar';
 import { ProductTile } from './components/ProductTile';
 import { PreviewModal } from './components/PreviewModal';
 import { DetailView } from './components/DetailView';
+import { ResizeHandle } from './components/ResizeHandle';
+import { applyTheme } from './theme';
 import styles from './styles.css';
 
 const DEFAULT_STATE: UiState = {
@@ -34,7 +42,12 @@ const DEFAULT_STATE: UiState = {
   locale: 'en',
   platform: 'web',
   filters: {},
+  theme: 'auto',
 };
+
+const DEFAULT_SIZE: UiSize = { width: 420, height: 720 };
+const MIN_SIZE: UiSize = { width: 360, height: 480 };
+const MAX_SIZE: UiSize = { width: 900, height: 1200 };
 
 type Level = 'search' | 'detail';
 
@@ -52,11 +65,20 @@ export function App(props: LoadedPayload) {
   const [locale, setLocale] = useState<Locale>(saved.locale);
   const [platform, setPlatform] = useState<Platform>(saved.platform);
   const [filters, setFilters] = useState<Filters>(saved.filters);
+  const [theme, setTheme] = useState<ThemeMode>(saved.theme ?? 'auto');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [uiSize, setUiSize] = useState<UiSize>(props.uiSize ?? DEFAULT_SIZE);
 
   const offers = props.offers;
 
+  // Apply theme on mount and whenever it changes.
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  // Persist UI state, debounced. clientStorage is on the main thread so
+  // we drip the saves rather than firing per keystroke.
   useEffect(() => {
     const handle = setTimeout(() => {
       emit<SaveStateHandler>('SAVE_STATE', {
@@ -67,10 +89,11 @@ export function App(props: LoadedPayload) {
         locale,
         platform,
         filters,
+        theme,
       });
     }, 250);
     return () => clearTimeout(handle);
-  }, [mode, search, sort, gridColumns, locale, platform, filters]);
+  }, [mode, search, sort, gridColumns, locale, platform, filters, theme]);
 
   const localizedOffers = useMemo(
     () => offers.map((o) => localize(o, locale)),
@@ -179,6 +202,53 @@ export function App(props: LoadedPayload) {
   };
   const clearAllSections = () => setSelectedSections(new Set());
 
+  const randomize = () => {
+    if (visible.length === 0) return;
+    const pick = visible[Math.floor(Math.random() * visible.length)];
+    setSelectedIds(new Set([pick.id]));
+    // Scroll the picked tile into view.
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-offer-id="${pick.id}"]`);
+      if (el && 'scrollIntoView' in el) {
+        (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  };
+
+  const onTileDragStart = (offer: Offer, e: DragEvent) => {
+    if (!e.dataTransfer) return;
+    e.dataTransfer.setData('text/plain', offer.id);
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const onTileDragEnd = (offer: Offer, e: DragEvent) => {
+    // Figma exposes drop coords on the dragend event when the drop
+    // landed on the canvas (vs another iframe). Falling back to the
+    // pointer coords keeps things working in browser previews.
+    const data = e as unknown as {
+      dataTransfer: DataTransfer | null;
+      clientX: number;
+      clientY: number;
+    };
+    const payload: DropPayload = {
+      offerId: offer.id,
+      clientX: data.clientX,
+      clientY: data.clientY,
+      locale,
+      platform,
+    };
+    emit<DropHandler>('DROP', payload);
+  };
+
+  // Resize: live-resize while dragging the corner handle, persist on commit.
+  const handleResize = (s: UiSize) => {
+    setUiSize(s);
+    emit<ResizeHandler>('RESIZE', s);
+  };
+  const handleResizeCommit = (s: UiSize) => {
+    emit<SaveUiSizeHandler>('SAVE_UI_SIZE', s);
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const inInput =
@@ -204,6 +274,14 @@ export function App(props: LoadedPayload) {
         } else if (level === 'search' && selectedIds.size > 0) {
           insert();
           e.preventDefault();
+        }
+        return;
+      }
+      // R = randomize, when focus isn't in a text field.
+      if ((e.key === 'r' || e.key === 'R') && !inInput && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (level === 'search') {
+          e.preventDefault();
+          randomize();
         }
         return;
       }
@@ -237,15 +315,20 @@ export function App(props: LoadedPayload) {
     sort !== 'default' ||
     Object.values(filters).some((v) => v !== undefined);
 
+  const headerProps = {
+    mode,
+    onModeChange: handleModeChange,
+    onRefresh: () => emit<RefreshHandler>('REFRESH'),
+    onRandomize: randomize,
+    theme,
+    onThemeChange: setTheme,
+    locale,
+  };
+
   if (level === 'detail' && detailOffer) {
     return (
       <div class={styles.root}>
-        <Header
-          mode={mode}
-          onModeChange={handleModeChange}
-          onRefresh={() => emit<RefreshHandler>('REFRESH')}
-          locale={locale}
-        />
+        <Header {...headerProps} />
         <LocaleBar
           locale={locale}
           onLocaleChange={setLocale}
@@ -281,18 +364,20 @@ export function App(props: LoadedPayload) {
                 : t('uiInsertNSections', locale, { n: selectedSections.size })}
           </button>
         </div>
+        <ResizeHandle
+          size={uiSize}
+          min={MIN_SIZE}
+          max={MAX_SIZE}
+          onResize={handleResize}
+          onCommit={handleResizeCommit}
+        />
       </div>
     );
   }
 
   return (
     <div class={styles.root}>
-      <Header
-        mode={mode}
-        onModeChange={handleModeChange}
-        onRefresh={() => emit<RefreshHandler>('REFRESH')}
-        locale={locale}
-      />
+      <Header {...headerProps} />
       <LocaleBar
         locale={locale}
         onLocaleChange={setLocale}
@@ -362,6 +447,8 @@ export function App(props: LoadedPayload) {
                 onToggle={() => toggle(o.id)}
                 onPreview={() => setPreviewId(o.id)}
                 onOpen={() => openDetail(o.id)}
+                onDragStart={(e) => onTileDragStart(o, e)}
+                onDragEnd={(e) => onTileDragEnd(o, e)}
                 locale={locale}
               />
             ))}
@@ -399,6 +486,14 @@ export function App(props: LoadedPayload) {
           locale={locale}
         />
       )}
+
+      <ResizeHandle
+        size={uiSize}
+        min={MIN_SIZE}
+        max={MAX_SIZE}
+        onResize={handleResize}
+        onCommit={handleResizeCommit}
+      />
     </div>
   );
 }

@@ -164,7 +164,35 @@ export type StringKey =
   | 'uiPerNightSlash'
   | 'uiOpenDetails'
   | 'uiInsertCard'
-  | 'uiPreviewTooltip';
+  | 'uiPreviewTooltip'
+  // v0.6 / v0.7 chrome
+  | 'uiRandomize'
+  | 'uiRandomizeTooltip'
+  | 'uiThemeAuto'
+  | 'uiThemeLight'
+  | 'uiThemeDark'
+  | 'uiThemeTooltip'
+  | 'uiToastUndo'
+  | 'uiPaletteHint'
+  | 'uiPalettePlaceholder'
+  | 'uiPaletteRandom'
+  | 'uiPaletteRefresh'
+  | 'uiPaletteFindAll'
+  | 'uiPaletteSetMode'
+  | 'uiPaletteSetPlatform'
+  | 'uiPaletteSetLocale'
+  | 'uiPaletteSetTheme'
+  | 'uiPaletteSavePreset'
+  | 'uiPaletteApplyPreset'
+  | 'uiPaletteDrop'
+  | 'uiDropBanner'
+  | 'uiDropBannerWithFields'
+  | 'uiDropBannerReplace'
+  | 'uiPresetSaved'
+  | 'uiPresetNamePrompt'
+  | 'uiFavouriteAdd'
+  | 'uiFavouriteRemove'
+  | 'uiHoverPeekTitle';
 
 export const STRINGS: Record<Locale, Record<StringKey, string>> = {
   en: {
@@ -311,6 +339,33 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiOpenDetails: 'Open details →',
     uiInsertCard: 'Insert card',
     uiPreviewTooltip: 'Preview details',
+    uiRandomize: 'Randomize',
+    uiRandomizeTooltip: 'Pick a random property (R)',
+    uiThemeAuto: 'Auto',
+    uiThemeLight: 'Light',
+    uiThemeDark: 'Dark',
+    uiThemeTooltip: 'Theme',
+    uiToastUndo: 'Undo',
+    uiPaletteHint: '⌘K',
+    uiPalettePlaceholder: 'Type a command…',
+    uiPaletteRandom: 'Random property',
+    uiPaletteRefresh: 'Refresh selected cards',
+    uiPaletteFindAll: 'Find all HTG cards on this page',
+    uiPaletteSetMode: 'Mode: {value}',
+    uiPaletteSetPlatform: 'Surface: {value}',
+    uiPaletteSetLocale: 'Market: {value}',
+    uiPaletteSetTheme: 'Theme: {value}',
+    uiPaletteSavePreset: 'Save current settings as preset…',
+    uiPaletteApplyPreset: 'Apply preset · {value}',
+    uiPaletteDrop: 'Drop a property card on the canvas',
+    uiDropBanner: 'Drop into "{name}"',
+    uiDropBannerWithFields: 'Drop into "{name}" — {n} #fields detected',
+    uiDropBannerReplace: 'Replace contents on drop',
+    uiPresetSaved: 'Preset "{name}" saved.',
+    uiPresetNamePrompt: 'Name this preset',
+    uiFavouriteAdd: 'Add to favourites',
+    uiFavouriteRemove: 'Remove from favourites',
+    uiHoverPeekTitle: 'Quick look',
   },
   de: {
     ratingOutstanding: 'Hervorragend',
@@ -456,6 +511,33 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiOpenDetails: 'Details öffnen →',
     uiInsertCard: 'Karte einfügen',
     uiPreviewTooltip: 'Details ansehen',
+    uiRandomize: 'Zufall',
+    uiRandomizeTooltip: 'Zufällige Unterkunft wählen (R)',
+    uiThemeAuto: 'Auto',
+    uiThemeLight: 'Hell',
+    uiThemeDark: 'Dunkel',
+    uiThemeTooltip: 'Design',
+    uiToastUndo: 'Rückgängig',
+    uiPaletteHint: '⌘K',
+    uiPalettePlaceholder: 'Befehl eingeben…',
+    uiPaletteRandom: 'Zufällige Unterkunft',
+    uiPaletteRefresh: 'Ausgewählte Karten aktualisieren',
+    uiPaletteFindAll: 'Alle HTG-Karten auf dieser Seite finden',
+    uiPaletteSetMode: 'Modus: {value}',
+    uiPaletteSetPlatform: 'Oberfläche: {value}',
+    uiPaletteSetLocale: 'Markt: {value}',
+    uiPaletteSetTheme: 'Design: {value}',
+    uiPaletteSavePreset: 'Aktuelle Einstellungen als Preset speichern…',
+    uiPaletteApplyPreset: 'Preset anwenden · {value}',
+    uiPaletteDrop: 'Karte auf dem Canvas ablegen',
+    uiDropBanner: 'In "{name}" ablegen',
+    uiDropBannerWithFields: 'In "{name}" ablegen — {n} #-Felder erkannt',
+    uiDropBannerReplace: 'Inhalte beim Ablegen ersetzen',
+    uiPresetSaved: 'Preset "{name}" gespeichert.',
+    uiPresetNamePrompt: 'Preset benennen',
+    uiFavouriteAdd: 'Zu Favoriten hinzufügen',
+    uiFavouriteRemove: 'Aus Favoriten entfernen',
+    uiHoverPeekTitle: 'Kurzansicht',
   },
   es: {
     ratingOutstanding: 'Excepcional',
@@ -601,6 +683,33 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiOpenDetails: 'Abrir detalles →',
     uiInsertCard: 'Insertar tarjeta',
     uiPreviewTooltip: 'Vista previa',
+    uiRandomize: 'Aleatorio',
+    uiRandomizeTooltip: 'Elegir alojamiento al azar (R)',
+    uiThemeAuto: 'Auto',
+    uiThemeLight: 'Claro',
+    uiThemeDark: 'Oscuro',
+    uiThemeTooltip: 'Tema',
+    uiToastUndo: 'Deshacer',
+    uiPaletteHint: '⌘K',
+    uiPalettePlaceholder: 'Escribe un comando…',
+    uiPaletteRandom: 'Alojamiento aleatorio',
+    uiPaletteRefresh: 'Actualizar tarjetas seleccionadas',
+    uiPaletteFindAll: 'Buscar todas las tarjetas HTG en esta página',
+    uiPaletteSetMode: 'Modo: {value}',
+    uiPaletteSetPlatform: 'Superficie: {value}',
+    uiPaletteSetLocale: 'Mercado: {value}',
+    uiPaletteSetTheme: 'Tema: {value}',
+    uiPaletteSavePreset: 'Guardar ajustes actuales como preset…',
+    uiPaletteApplyPreset: 'Aplicar preset · {value}',
+    uiPaletteDrop: 'Soltar una tarjeta en el lienzo',
+    uiDropBanner: 'Soltar en "{name}"',
+    uiDropBannerWithFields: 'Soltar en "{name}" — {n} #campos detectados',
+    uiDropBannerReplace: 'Reemplazar contenido al soltar',
+    uiPresetSaved: 'Preset "{name}" guardado.',
+    uiPresetNamePrompt: 'Nombre del preset',
+    uiFavouriteAdd: 'Añadir a favoritos',
+    uiFavouriteRemove: 'Quitar de favoritos',
+    uiHoverPeekTitle: 'Vista rápida',
   },
   fr: {
     ratingOutstanding: 'Exceptionnel',
@@ -746,6 +855,33 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiOpenDetails: 'Voir les détails →',
     uiInsertCard: 'Insérer la fiche',
     uiPreviewTooltip: 'Aperçu',
+    uiRandomize: 'Aléatoire',
+    uiRandomizeTooltip: 'Choisir un logement au hasard (R)',
+    uiThemeAuto: 'Auto',
+    uiThemeLight: 'Clair',
+    uiThemeDark: 'Sombre',
+    uiThemeTooltip: 'Thème',
+    uiToastUndo: 'Annuler',
+    uiPaletteHint: '⌘K',
+    uiPalettePlaceholder: 'Tapez une commande…',
+    uiPaletteRandom: 'Logement aléatoire',
+    uiPaletteRefresh: 'Actualiser les fiches sélectionnées',
+    uiPaletteFindAll: 'Trouver toutes les fiches HTG sur cette page',
+    uiPaletteSetMode: 'Mode : {value}',
+    uiPaletteSetPlatform: 'Surface : {value}',
+    uiPaletteSetLocale: 'Marché : {value}',
+    uiPaletteSetTheme: 'Thème : {value}',
+    uiPaletteSavePreset: 'Enregistrer les réglages actuels comme préréglage…',
+    uiPaletteApplyPreset: 'Appliquer le préréglage · {value}',
+    uiPaletteDrop: 'Déposer une fiche sur le canevas',
+    uiDropBanner: 'Déposer dans « {name} »',
+    uiDropBannerWithFields: 'Déposer dans « {name} » — {n} champs # détectés',
+    uiDropBannerReplace: 'Remplacer le contenu au dépôt',
+    uiPresetSaved: 'Préréglage « {name} » enregistré.',
+    uiPresetNamePrompt: 'Nommez ce préréglage',
+    uiFavouriteAdd: 'Ajouter aux favoris',
+    uiFavouriteRemove: 'Retirer des favoris',
+    uiHoverPeekTitle: 'Aperçu rapide',
   },
 };
 

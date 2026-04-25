@@ -11,10 +11,21 @@ interface Props {
   onToggle: () => void;
   onPreview: () => void;
   onOpen: () => void;
+  onDragStart?: (e: DragEvent) => void;
+  onDragEnd?: (e: DragEvent) => void;
   locale: Locale;
 }
 
-export function ProductTile({ offer, selected, onToggle, onPreview, onOpen, locale }: Props) {
+export function ProductTile({
+  offer,
+  selected,
+  onToggle,
+  onPreview,
+  onOpen,
+  onDragStart,
+  onDragEnd,
+  locale,
+}: Props) {
   const badge = offer.badges[0];
   const isDeal = badge === 'great_deal';
 
@@ -22,6 +33,10 @@ export function ProductTile({ offer, selected, onToggle, onPreview, onOpen, loca
     <div
       class={`${styles.tile} ${selected ? styles.tileSelected : ''}`}
       onClick={onToggle}
+      data-offer-id={offer.id}
+      draggable={!!onDragStart}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
     >
       <div
         class={styles.tileImage}

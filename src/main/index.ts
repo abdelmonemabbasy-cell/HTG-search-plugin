@@ -1,43 +1,79 @@
-import { on, showUI } from '@create-figma-plugin/utilities';
+import { emit, on, showUI } from '@create-figma-plugin/utilities';
 import productsJson from '@data/products.json';
 import type { Offer } from '@shared/types';
 import type {
+  DropHandler,
+  DropPayload,
+  FindAllHandler,
+  HighlightOfferHandler,
   InsertCardsPayload,
   InsertHandler,
   InsertMode,
   InsertPayload,
+  InsertResultHandler,
   InsertSectionsPayload,
   LoadedPayload,
   RefreshHandler,
+  ResizeHandler,
   SaveStateHandler,
+  SaveUiSizeHandler,
   SectionKind,
+  SelectionTargetHandler,
+  SelectionTargetInfo,
+  UiSize,
   UiState,
+  UndoHandler,
 } from '@shared/messages';
 import type { Locale } from '@shared/locales';
 import type { Platform } from '@shared/platforms';
 import { PLATFORM_SPEC } from '@shared/platforms';
 import { buildCard } from './generate';
 import { buildSection } from './sections';
-import { firstTargetInSelection, populateSelection } from './populate';
+import {
+  fillIntoTarget,
+  firstTargetInSelection,
+  hasFieldNames,
+  populateSelection,
+} from './populate';
 
 const OFFERS = productsJson as unknown as Offer[];
 const OFFER_BY_ID: Record<string, Offer> = Object.fromEntries(
   OFFERS.map((o) => [o.id, o]),
 );
 const LAYOUT_GAP = 16;
-const CONTAINER_PADDING = 20;
 const UI_STATE_KEY = 'htgUiState';
+const UI_SIZE_KEY = 'htgUiSize';
+const DEFAULT_SIZE: UiSize = { width: 420, height: 720 };
+const MIN_SIZE: UiSize = { width: 360, height: 480 };
+const MAX_SIZE: UiSize = { width: 900, height: 1200 };
 
 export default async function () {
   const savedState = (await figma.clientStorage.getAsync(UI_STATE_KEY)) as
     | UiState
     | undefined;
+  const savedSize = ((await figma.clientStorage.getAsync(UI_SIZE_KEY)) as
+    | UiSize
+    | undefined) ?? DEFAULT_SIZE;
+  const uiSize = clampSize(savedSize);
 
-  const initialData: LoadedPayload = { offers: OFFERS, savedState };
-  showUI({ width: 420, height: 720 }, { ...initialData });
+  const initialData: LoadedPayload = {
+    offers: OFFERS,
+    savedState,
+    uiSize,
+  };
+  showUI({ width: uiSize.width, height: uiSize.height }, { ...initialData });
 
   on<SaveStateHandler>('SAVE_STATE', async (state) => {
     await figma.clientStorage.setAsync(UI_STATE_KEY, state);
+  });
+
+  on<SaveUiSizeHandler>('SAVE_UI_SIZE', async (size) => {
+    await figma.clientStorage.setAsync(UI_SIZE_KEY, clampSize(size));
+  });
+
+  on<ResizeHandler>('RESIZE', (size) => {
+    const c = clampSize(size);
+    figma.ui.resize(c.width, c.height);
   });
 
   on<InsertHandler>('INSERT', async (payload: InsertPayload) => {
@@ -46,6 +82,45 @@ export default async function () {
       return;
     }
     await insertLevel1(payload);
+  });
+
+  on<DropHandler>('DROP', async (payload) => {
+    await handleDrop(payload);
+  });
+
+  on<UndoHandler>('UNDO', async ({ nodeIds }) => {
+    let removed = 0;
+    for (const id of nodeIds) {
+      const node = await figma.getNodeByIdAsync(id);
+      if (node && !node.removed && 'remove' in node) {
+        (node as SceneNode).remove();
+        removed++;
+      }
+    }
+    figma.notify(
+      removed === 0 ? 'Nothing to undo.' : `Undid ${removed} insert${removed === 1 ? '' : 's'}.`,
+    );
+  });
+
+  on<FindAllHandler>('FIND_ALL', () => {
+    const tagged: SceneNode[] = [];
+    const visit = (node: BaseNode) => {
+      if ('getPluginData' in node) {
+        const id = (node as SceneNode).getPluginData('htgOfferId');
+        if (id && (node as SceneNode).type === 'FRAME') tagged.push(node as SceneNode);
+      }
+      if ('children' in node) {
+        for (const child of (node as ChildrenMixin).children) visit(child);
+      }
+    };
+    visit(figma.currentPage);
+    if (tagged.length === 0) {
+      figma.notify('No HTG cards on this page.');
+      return;
+    }
+    figma.currentPage.selection = tagged;
+    figma.viewport.scrollAndZoomIntoView(tagged);
+    figma.notify(`Selected ${tagged.length} HTG node${tagged.length === 1 ? '' : 's'}.`);
   });
 
   on<RefreshHandler>('REFRESH', async () => {
@@ -88,6 +163,61 @@ export default async function () {
         : `Refreshed ${refreshed} HomeToGo ${refreshed === 1 ? 'card' : 'cards'}`,
     );
   });
+
+  // Wire canvas → UI awareness. We surface two things on every selection
+  // change: the offerId of a tagged HTG card (so the matching tile can
+  // pulse), and the "drop target" — a frame the user has selected so the
+  // UI can show the "Drop into 'X'" banner with a Replace toggle.
+  figma.on('selectionchange', () => {
+    pushHighlight();
+    pushSelectionTarget();
+  });
+  // Initial push so the UI starts in sync.
+  pushHighlight();
+  pushSelectionTarget();
+}
+
+function clampSize(s: UiSize): UiSize {
+  return {
+    width: Math.max(MIN_SIZE.width, Math.min(MAX_SIZE.width, Math.round(s.width))),
+    height: Math.max(MIN_SIZE.height, Math.min(MAX_SIZE.height, Math.round(s.height))),
+  };
+}
+
+function pushHighlight(): void {
+  const sel = figma.currentPage.selection;
+  let offerId: string | null = null;
+  for (const node of sel) {
+    if (node.type === 'FRAME') {
+      const id = node.getPluginData('htgOfferId');
+      if (id) {
+        offerId = id;
+        break;
+      }
+    }
+  }
+  emit<HighlightOfferHandler>('HIGHLIGHT_OFFER', { offerId });
+}
+
+function pushSelectionTarget(): void {
+  const sel = figma.currentPage.selection;
+  const target = firstTargetInSelection(sel);
+  if (!target) {
+    emit<SelectionTargetHandler>('SELECTION_TARGET', null);
+    return;
+  }
+  // Skip nodes that are themselves an inserted HTG card — they aren't
+  // useful drop targets, only refresh targets.
+  if (target.getPluginData('htgOfferId')) {
+    emit<SelectionTargetHandler>('SELECTION_TARGET', null);
+    return;
+  }
+  const info: SelectionTargetInfo = {
+    id: target.id,
+    name: target.name || 'Frame',
+    hasFieldNames: hasFieldNames(target),
+  };
+  emit<SelectionTargetHandler>('SELECTION_TARGET', info);
 }
 
 function collectTaggedFrames(selection: readonly SceneNode[]): FrameNode[] {
@@ -128,11 +258,16 @@ async function insertLevel1(payload: InsertCardsPayload): Promise<void> {
   figma.viewport.scrollAndZoomIntoView(created);
 
   const verb = mode === 'grid' ? 'grid' : mode === 'list' ? 'list' : 'card';
-  figma.notify(
+  const label =
     offers.length === 1
       ? `Inserted "${offers[0].title}" (${platform}, ${locale.toUpperCase()})`
-      : `Inserted ${offers.length} properties as a ${verb}`,
-  );
+      : `Inserted ${offers.length} properties as a ${verb}`;
+  figma.notify(label);
+  emit<InsertResultHandler>('INSERT_RESULT', {
+    nodeIds: created.map((n) => n.id),
+    label,
+    kind: 'inserted',
+  });
 }
 
 async function insertCards(
@@ -215,7 +350,13 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
     figma.currentPage.appendChild(node);
     figma.currentPage.selection = [node];
     figma.viewport.scrollAndZoomIntoView([node]);
-    figma.notify(`Inserted "${sections[0]}" for "${offer.title}"`);
+    const label = `Inserted "${sections[0]}" for "${offer.title}"`;
+    figma.notify(label);
+    emit<InsertResultHandler>('INSERT_RESULT', {
+      nodeIds: [node.id],
+      label,
+      kind: 'inserted',
+    });
     return;
   }
 
@@ -244,7 +385,75 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
 
   figma.currentPage.selection = [container];
   figma.viewport.scrollAndZoomIntoView([container]);
-  figma.notify(
-    `Inserted ${sections.length} detail sections for "${offer.title}"`,
-  );
+  const label = `Inserted ${sections.length} detail sections for "${offer.title}"`;
+  figma.notify(label);
+  emit<InsertResultHandler>('INSERT_RESULT', {
+    nodeIds: [container.id],
+    label,
+    kind: 'inserted',
+  });
+}
+
+/**
+ * Resolve where a tile-drop should land. Picks one of three modes:
+ *   1. populate — drop a single offer onto a frame with #fieldName
+ *      children. Replace state is irrelevant (we override existing
+ *      text/image fills regardless).
+ *   2. fill — drop into the selected frame as a child. Clears the
+ *      frame's children when `replaceOnDrop` is on, otherwise appends.
+ *   3. viewport — fall back to the drop coordinates and append to the
+ *      current page.
+ */
+async function handleDrop(payload: DropPayload): Promise<void> {
+  const { offerId, locale, platform, canvasX, canvasY, replaceOnDrop } = payload;
+  const offer = OFFER_BY_ID[offerId];
+  if (!offer) return;
+
+  const target = firstTargetInSelection(figma.currentPage.selection);
+  if (target && !target.getPluginData('htgOfferId')) {
+    // Try populate first; if no #fieldName children, fall through to fill.
+    if (hasFieldNames(target)) {
+      const filled = await populateSelection(target, offer, locale);
+      if (filled > 0) {
+        const label = `Populated ${filled} layer${filled === 1 ? '' : 's'} in "${target.name}".`;
+        figma.notify(label);
+        emit<InsertResultHandler>('INSERT_RESULT', {
+          nodeIds: [],
+          label,
+          kind: 'populated',
+        });
+        return;
+      }
+    }
+    const card = await buildCard(offer, locale, platform);
+    fillIntoTarget(target, card, !!replaceOnDrop);
+    figma.currentPage.selection = [card];
+    const label = `${replaceOnDrop ? 'Replaced into' : 'Dropped into'} "${target.name}".`;
+    figma.notify(label);
+    emit<InsertResultHandler>('INSERT_RESULT', {
+      nodeIds: [card.id],
+      label,
+      kind: replaceOnDrop ? 'replaced' : 'dropped',
+    });
+    return;
+  }
+
+  // Fall back: place the card at the drop point on the page.
+  const card = await buildCard(offer, locale, platform);
+  if (typeof canvasX === 'number' && typeof canvasY === 'number') {
+    card.x = canvasX - card.width / 2;
+    card.y = canvasY - card.height / 2;
+  } else {
+    card.x = figma.viewport.center.x - card.width / 2;
+    card.y = figma.viewport.center.y - card.height / 2;
+  }
+  figma.currentPage.appendChild(card);
+  figma.currentPage.selection = [card];
+  const label = `Dropped "${offer.title}" on the canvas.`;
+  figma.notify(label);
+  emit<InsertResultHandler>('INSERT_RESULT', {
+    nodeIds: [card.id],
+    label,
+    kind: 'dropped',
+  });
 }
