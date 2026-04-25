@@ -22,5 +22,6 @@ export function applyTheme(theme: ThemeMode): void {
 export function isDark(theme: ThemeMode): boolean {
   if (theme === 'dark') return true;
   if (theme === 'light') return false;
-  return document.documentElement.classList.contains('figma-dark');
+  const cl = document.documentElement.classList;
+  return cl.contains('figma-dark') || cl.contains('figma-darker');
 }

@@ -24,11 +24,40 @@
   --radius-pill: 999px;
 }
 
-/* Dark theme. Triggered by either:
-   - html.figma-dark (set by Figma when the user runs in dark)
+/* Light override. Wins over Figma's host theme so users can force a
+   light surface even when Figma itself is dark. The :root block above
+   already carries the canonical light palette; this rule exists so the
+   selector specificity matches the dark rule below (otherwise the dark
+   rule would win whenever both apply). */
+:global(html[data-theme="light"]) {
+  --htg-violet: #6b42e8;
+  --htg-violet-dark: #5a33d6;
+  --htg-violet-soft: #f2edff;
+  --htg-magenta: #d149c5;
+  --htg-coral: #fc4d5b;
+  --htg-coral-soft: #ffeef0;
+  --htg-text: #0e1824;
+  --htg-text-muted: #5b6b7e;
+  --htg-text-subtle: #95a3b3;
+  --htg-border: #e1e6ec;
+  --htg-border-strong: #c4ccd7;
+  --htg-surface: #f7f9fc;
+  --htg-bg: #ffffff;
+  --htg-card: #ffffff;
+  --htg-overlay: rgba(14, 24, 36, 0.4);
+  --htg-shadow-1: 0 1px 2px rgba(14, 24, 36, 0.08);
+  --htg-shadow-2: 0 4px 12px rgba(14, 24, 36, 0.08);
+  --htg-shadow-3: 0 8px 24px rgba(14, 24, 36, 0.18);
+  --htg-green: #22a06e;
+}
+
+/* Dark theme. Triggered by any of:
+   - html.figma-dark   (Figma's standard dark)
+   - html.figma-darker (Figma's deeper dark variant)
    - html[data-theme="dark"] (explicit override from the plugin's theme picker)
-   The light override (data-theme="light") wins over figma-dark. */
+   The light override (data-theme="light") wins over all of these. */
 :global(html.figma-dark:not([data-theme="light"])),
+:global(html.figma-darker:not([data-theme="light"])),
 :global(html[data-theme="dark"]) {
   --htg-violet: #8b6cf0;
   --htg-violet-dark: #7858e3;

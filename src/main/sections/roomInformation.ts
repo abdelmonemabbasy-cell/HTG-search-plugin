@@ -55,7 +55,7 @@ export function buildRoomInformation(
     card.layoutAlign = 'STRETCH';
     card.primaryAxisSizingMode = 'AUTO';
     card.counterAxisSizingMode = 'FIXED';
-    card.resize(innerWidth, 1);
+    card.resizeWithoutConstraints(innerWidth, 1);
     card.paddingTop = card.paddingBottom = 14;
     card.paddingLeft = card.paddingRight = 14;
     card.cornerRadius = 12;

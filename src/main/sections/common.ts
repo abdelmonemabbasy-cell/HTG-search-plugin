@@ -111,7 +111,7 @@ export function sectionFrame(name: string, platform: Platform): FrameNode {
   frame.layoutMode = 'VERTICAL';
   frame.primaryAxisSizingMode = 'AUTO';
   frame.counterAxisSizingMode = 'FIXED';
-  frame.resize(m.width, 1);
+  frame.resizeWithoutConstraints(m.width, 1);
   frame.paddingTop = frame.paddingBottom = m.padding;
   frame.paddingLeft = frame.paddingRight = m.padding;
   frame.itemSpacing = m.gap;
@@ -137,7 +137,7 @@ export function sectionHeading(label: string, platform: Platform): TextNode {
 export function divider(width: number): FrameNode {
   const d = figma.createFrame();
   d.name = 'divider';
-  d.resize(width, 1);
+  d.resizeWithoutConstraints(width, 1);
   d.layoutAlign = 'STRETCH';
   d.fills = [{ type: 'SOLID', color: BRAND.border }];
   return d;

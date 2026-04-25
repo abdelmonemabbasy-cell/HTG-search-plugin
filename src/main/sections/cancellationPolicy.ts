@@ -47,13 +47,13 @@ export function buildCancellationPolicy(
     card.layoutMode = 'HORIZONTAL';
     card.primaryAxisSizingMode = 'FIXED';
     card.counterAxisSizingMode = 'AUTO';
-    card.resize(innerWidth, 1);
+    card.resizeWithoutConstraints(innerWidth, 1);
     card.cornerRadius = 12;
     card.fills = [{ type: 'SOLID', color: BRAND.surface }];
     card.clipsContent = true;
 
     const rail = figma.createFrame();
-    rail.resize(4, 1);
+    rail.resizeWithoutConstraints(4, 1);
     rail.layoutAlign = 'STRETCH';
     rail.fills = [{ type: 'SOLID', color: refundColor(tier.refundPct) }];
     card.appendChild(rail);
