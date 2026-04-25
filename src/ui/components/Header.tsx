@@ -58,6 +58,7 @@ export function Header({
         <HomeToGoMark />
       </div>
       <div class={styles.headerRight}>
+        {/* Canvas actions */}
         <button
           class={styles.iconBtn}
           onClick={onFindAll}
@@ -71,6 +72,28 @@ export function Header({
             <path d="M8 11h6" />
           </svg>
         </button>
+        <button
+          class={styles.iconBtn}
+          onClick={onRefresh}
+          title={t('uiRefresh', locale)}
+          aria-label={t('uiRefresh', locale)}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+        </button>
+
+        <span class={styles.headerDivider} aria-hidden="true" />
+
+        {/* Settings */}
+        <PresetsMenu
+          presets={presets}
+          onApply={onApplyPreset}
+          onSave={onSavePreset}
+          onDelete={onDeletePreset}
+          locale={locale}
+        />
         <div class={styles.themeMenu} ref={wrapRef}>
           <button
             class={styles.iconBtn}
@@ -99,24 +122,7 @@ export function Header({
             </div>
           )}
         </div>
-        <PresetsMenu
-          presets={presets}
-          onApply={onApplyPreset}
-          onSave={onSavePreset}
-          onDelete={onDeletePreset}
-          locale={locale}
-        />
         <HelpMenu locale={locale} />
-        <button
-          class={styles.iconBtn}
-          onClick={onRefresh}
-          title={t('uiRefresh', locale)}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 4v6h-6" />
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-          </svg>
-        </button>
       </div>
     </div>
   );

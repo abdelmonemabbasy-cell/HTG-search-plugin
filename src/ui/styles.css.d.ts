@@ -26,6 +26,7 @@ declare const styles: {
   readonly "detailFacts": string;
   readonly "detailFactsRow": string;
   readonly "detailHero": string;
+  readonly "detailHeroDragHint": string;
   readonly "detailHeroOverlay": string;
   readonly "detailLocation": string;
   readonly "detailPrice": string;
@@ -72,6 +73,7 @@ declare const styles: {
   readonly "footerInfoActive": string;
   readonly "grid": string;
   readonly "header": string;
+  readonly "headerDivider": string;
   readonly "headerRight": string;
   readonly "helpDropdown": string;
   readonly "helpHeading": string;

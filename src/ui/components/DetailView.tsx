@@ -99,6 +99,8 @@ interface Props {
   onSelectAll: () => void;
   onClear: () => void;
   onSectionDragStart?: (kind: SectionKind, e: DragEvent) => void;
+  /** Drag the property hero to drop a card of this offer on the canvas. */
+  onCardDragStart?: (e: DragEvent) => void;
   locale: Locale;
 }
 
@@ -125,6 +127,7 @@ export function DetailView({
   onSelectAll,
   onClear,
   onSectionDragStart,
+  onCardDragStart,
   locale,
 }: Props) {
   const heroUrl = offer.images[0]?.url;
@@ -143,6 +146,9 @@ export function DetailView({
       <div
         class={styles.detailHero}
         style={heroUrl ? { backgroundImage: `url(${heroUrl})` } : undefined}
+        draggable={!!onCardDragStart}
+        onDragStart={onCardDragStart}
+        title={onCardDragStart ? t('uiPreviewDragHint', locale) : undefined}
       >
         <div class={styles.detailHeroOverlay}>
           <div class={styles.detailCategory}>
@@ -155,6 +161,9 @@ export function DetailView({
               : `${offer.location.city}, ${offer.location.country}`}
           </div>
         </div>
+        {onCardDragStart && (
+          <span class={styles.detailHeroDragHint}>{t('uiPreviewDragHint', locale)}</span>
+        )}
       </div>
 
       <div class={styles.detailFacts}>

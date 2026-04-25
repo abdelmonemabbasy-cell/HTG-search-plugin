@@ -44,7 +44,7 @@ import { Toast } from './components/Toast';
 import { CommandPalette, type PaletteCommand } from './components/CommandPalette';
 import { runConfetti } from './confetti';
 import { DropTargetBanner } from './components/DropTargetBanner';
-import { attachDragImage } from './dragImage';
+import { attachDragImage, attachSectionDragImage } from './dragImage';
 import { applyTheme } from './theme';
 import styles from './styles.css';
 
@@ -446,6 +446,7 @@ export function App(props: LoadedPayload) {
     e.dataTransfer.setData('application/htg-section', JSON.stringify(body));
     e.dataTransfer.setData('text/plain', `${kind} · ${offer.title}`);
     e.dataTransfer.effectAllowed = 'copy';
+    attachSectionDragImage(e, sectionDragLabel(kind, locale));
   };
 
   // Canvas drops are handled exclusively by the main thread's
@@ -702,6 +703,7 @@ export function App(props: LoadedPayload) {
           onSelectAll={selectAllSections}
           onClear={clearAllSections}
           onSectionDragStart={(kind, e) => onSectionDragStart(detailOffer, kind, e)}
+          onCardDragStart={(e) => onTileDragStart(detailOffer, e)}
           locale={locale}
         />
         <div class={styles.footer}>
@@ -921,5 +923,22 @@ function sectionHasData(kind: SectionKind, offer: Offer | undefined): boolean {
     default:
       return true;
   }
+}
+
+function sectionDragLabel(kind: SectionKind, locale: Locale): string {
+  const tileKey = `uiTile${kind.charAt(0).toUpperCase()}${kind.slice(1)}` as
+    | 'uiTileGallery'
+    | 'uiTileTitleHeader'
+    | 'uiTileQuickFacts'
+    | 'uiTileReasonsToBook'
+    | 'uiTileReviews'
+    | 'uiTileAmenities'
+    | 'uiTileRoomInformation'
+    | 'uiTileDescription'
+    | 'uiTileHouseRules'
+    | 'uiTileLocation'
+    | 'uiTilePriceBreakdown'
+    | 'uiTileCancellationPolicy';
+  return t(tileKey, locale);
 }
 

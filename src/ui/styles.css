@@ -159,7 +159,14 @@
 .headerRight {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+}
+
+.headerDivider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--htg-border);
+  margin: 4px 4px;
 }
 
 .refreshBtn {
@@ -1024,6 +1031,31 @@
   border-radius: var(--radius-md);
   position: relative;
   overflow: hidden;
+  cursor: grab;
+}
+
+.detailHero:active {
+  cursor: grabbing;
+}
+
+.detailHeroDragHint {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(14, 24, 36, 0.7);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.detailHero:hover .detailHeroDragHint {
+  opacity: 1;
 }
 
 .detailHeroOverlay {
