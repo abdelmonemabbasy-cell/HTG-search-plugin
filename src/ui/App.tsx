@@ -3,12 +3,11 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { emit, on } from '@create-figma-plugin/utilities';
 import type { Offer } from '@shared/types';
 import type {
-  DropHandler,
-  DropPayload,
   FindAllHandler,
   HighlightHandler,
   InsertHandler,
   InsertMode,
+  MultiLayout,
   InsertedHandler,
   ToastMessage,
   LoadedPayload,
@@ -18,8 +17,6 @@ import type {
   SaveStateHandler,
   SaveUiSizeHandler,
   SectionKind,
-  SelectionTargetHandler,
-  SelectionTarget,
   SortKey,
   SyncOffersHandler,
   Theme,
@@ -37,21 +34,17 @@ import { FilterBar, type Filters } from './components/FilterBar';
 import { SortBar } from './components/SortBar';
 import { LocaleBar } from './components/LocaleBar';
 import { ProductTile } from './components/ProductTile';
-import { PreviewModal } from './components/PreviewModal';
+import { DropCta } from './components/DropCta';
 import { DetailView } from './components/DetailView';
 import { ResizeHandle } from './components/ResizeHandle';
-import { HoverPeek } from './components/HoverPeek';
-import { NumberTicker } from './components/NumberTicker';
 import { Toast } from './components/Toast';
 import { CommandPalette, type PaletteCommand } from './components/CommandPalette';
-import { runConfetti } from './confetti';
-import { DropTargetBanner } from './components/DropTargetBanner';
-import { attachDragImage } from './dragImage';
+import { attachDragImage, attachSectionDragImage } from './dragImage';
 import { applyTheme } from './theme';
 import styles from './styles.css';
 
 const DEFAULT_STATE: UiState = {
-  mode: 'single',
+  multiLayout: 'list',
   search: '',
   sort: 'default',
   gridColumns: 2,
@@ -67,14 +60,27 @@ const MAX_SIZE: UiSize = { width: 900, height: 1200 };
 
 type Level = 'search' | 'detail';
 
+/**
+ * Migrate the legacy `mode` field on saved UiState into `multiLayout`. Old
+ * sessions that persisted mode='single' fall back to multiLayout='list' (the
+ * single-card case is now derived from selection count, not stored).
+ */
+function readSavedState(raw: Partial<UiState> & { mode?: InsertMode } | undefined): UiState {
+  const merged: UiState = { ...DEFAULT_STATE, ...(raw ?? {}) };
+  if (raw && !raw.multiLayout && raw.mode) {
+    merged.multiLayout = raw.mode === 'grid' ? 'grid' : 'list';
+  }
+  return merged;
+}
+
 export function App(props: LoadedPayload) {
-  const saved: UiState = { ...DEFAULT_STATE, ...(props.savedState ?? {}) };
+  const saved = readSavedState(props.savedState);
 
   const [level, setLevel] = useState<Level>('search');
   const [detailOfferId, setDetailOfferId] = useState<string | null>(null);
   const [selectedSections, setSelectedSections] = useState<Set<SectionKind>>(new Set());
 
-  const [mode, setMode] = useState<InsertMode>(saved.mode);
+  const [multiLayout, setMultiLayout] = useState<MultiLayout>(saved.multiLayout);
   const [search, setSearch] = useState(saved.search);
   const [sort, setSort] = useState<SortKey>(saved.sort);
   const [gridColumns, setGridColumns] = useState<number>(saved.gridColumns);
@@ -83,14 +89,11 @@ export function App(props: LoadedPayload) {
   const [filters, setFilters] = useState<Filters>(saved.filters);
   const [theme, setTheme] = useState<Theme>(saved.theme ?? 'auto');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [previewId, setPreviewId] = useState<string | null>(null);
   const [uiSize, setUiSize] = useState<UiSize>(props.uiSize ?? DEFAULT_SIZE);
   const [favourites, setFavourites] = useState<Set<string>>(
     new Set(saved.favourites ?? []),
   );
   const [anchorId, setAnchorId] = useState<string | null>(null);
-  const [hoverPeek, setHoverPeek] = useState<{ id: string; rect: DOMRect } | null>(null);
-  const hoverTimerRef = useRef<number | null>(null);
 
   // v0.7 chunk 2: toast + palette + presets + confetti
   const [presets, setPresets] = useState<UiPreset[]>(saved.presets ?? []);
@@ -100,13 +103,15 @@ export function App(props: LoadedPayload) {
     nodeIds: string[];
     seq: number;
   } | null>(null);
-  const firstDropFiredRef = useRef(false);
+  // Persistent undo handle — outlives the toast's 5 s timeout so a
+  // designer who looked away can still revert the most recent drop.
+  // Cleared by clicking the footer Undo pill or replaced by the next
+  // drop that produced node ids.
+  const [lastUndo, setLastUndo] = useState<{ nodeIds: string[]; label: string } | null>(null);
 
   // v0.7 chunk 3: canvas → UI awareness
   const [pulseId, setPulseId] = useState<string | null>(null);
   const pulseTimerRef = useRef<number | null>(null);
-  const [dropTarget, setDropTarget] = useState<SelectionTarget | null>(null);
-  const [replaceOnDrop, setReplaceOnDrop] = useState<boolean>(saved.replaceOnDrop ?? false);
 
   // v0.8: catalogue lives in the UI iframe via OffersSource. The
   // `offers` state is the result of the most recent source.search()
@@ -167,9 +172,8 @@ export function App(props: LoadedPayload) {
     };
   }, [source, locale, search, filters, sort, favourites, reloadTick]);
 
-  // Listen for INSERT_RESULT from main → show a toast with optional Undo,
-  // and fire a one-shot confetti burst on the very first successful drop
-  // of the current session.
+  // Listen for INSERT_RESULT from main → show a toast with optional Undo
+  // and stash the node ids so the footer Undo pill can outlive the toast.
   useEffect(() => {
     const off = on<InsertedHandler>('INSERTED', (payload: ToastMessage) => {
       setToast({
@@ -177,9 +181,8 @@ export function App(props: LoadedPayload) {
         nodeIds: payload.createdNodeIds,
         seq: Date.now(),
       });
-      if (!firstDropFiredRef.current && payload.kind !== 'populated') {
-        firstDropFiredRef.current = true;
-        runConfetti();
+      if (payload.createdNodeIds.length > 0) {
+        setLastUndo({ nodeIds: payload.createdNodeIds, label: payload.label });
       }
     });
     return () => off();
@@ -215,20 +218,12 @@ export function App(props: LoadedPayload) {
     };
   }, []);
 
-  // Drop target info — drives the "Drop into 'X'" banner.
-  useEffect(() => {
-    const off = on<SelectionTargetHandler>('SELECTION_TARGET', ({ target }) => {
-      setDropTarget(target);
-    });
-    return () => off();
-  }, []);
-
   // Persist UI state, debounced. clientStorage is on the main thread so
   // we drip the saves rather than firing per keystroke.
   useEffect(() => {
     const handle = setTimeout(() => {
       emit<SaveStateHandler>('SAVE_STATE', {
-        mode,
+        multiLayout,
         search,
         sort,
         gridColumns,
@@ -238,12 +233,11 @@ export function App(props: LoadedPayload) {
         theme,
         favourites: Array.from(favourites),
         presets,
-        replaceOnDrop,
       });
     }, 250);
     return () => clearTimeout(handle);
   }, [
-    mode,
+    multiLayout,
     search,
     sort,
     gridColumns,
@@ -253,13 +247,12 @@ export function App(props: LoadedPayload) {
     theme,
     favourites,
     presets,
-    replaceOnDrop,
   ]);
 
   // Filtering / sorting / localization moved into OffersSource.search
   // — `offers` is already the visible list. The local catalogue
   // (`offers` state) is what the source returned for the current
-  // query. Keep a fast id → offer lookup for previewId / detailOfferId.
+  // query. Keep a fast id → offer lookup for detailOfferId.
   const visible = offers;
   const offersById = useMemo(() => {
     const m = new Map<string, Offer>();
@@ -268,23 +261,18 @@ export function App(props: LoadedPayload) {
   }, [offers]);
 
   /**
-   * Tile-click handler with shift/cmd multi-select.
+   * Tile-click handler. Selection is always multi-capable; the engine
+   * picks a single-card vs list-vs-grid layout from selection count
+   * + multiLayout preference, so there is no longer a "single mode".
    *
-   * - single mode: always one-of-N (the modifier keys are no-ops).
-   * - shift + click: select range [anchor, id] in visible order. The
-   *   anchor stays where it was so subsequent shift-clicks pivot
-   *   from the same starting point.
-   * - cmd/ctrl + click: additively toggle id without moving the
+   * - plain click: replaces the selection with this id (one-of-N feel
+   *   when the user just wants one) and moves the anchor.
+   * - shift + click: extends the existing selection to a range from
+   *   the anchor to id.
+   * - cmd/ctrl + click: additively toggles id without moving the
    *   anchor — useful for picking out a few specific tiles.
-   * - plain click: toggle id and move the anchor to id (so the next
-   *   shift-click ranges from here).
    */
   const toggle = (id: string, e?: MouseEvent) => {
-    if (mode === 'single') {
-      setSelectedIds((prev) => (prev.has(id) ? new Set() : new Set([id])));
-      setAnchorId(id);
-      return;
-    }
     const shift = !!e && e.shiftKey;
     const meta = !!e && (e.metaKey || e.ctrlKey);
 
@@ -303,14 +291,21 @@ export function App(props: LoadedPayload) {
         return;
       }
     }
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-    // Plain click moves the anchor; cmd/ctrl deliberately doesn't.
-    if (!shift && !meta) setAnchorId(id);
+
+    if (meta) {
+      // Additive toggle, anchor stays put.
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+      return;
+    }
+
+    // Plain click: replace the selection with just this id.
+    setSelectedIds((prev) => (prev.size === 1 && prev.has(id) ? new Set() : new Set([id])));
+    setAnchorId(id);
   };
 
   const toggleFavourite = (id: string) => {
@@ -322,29 +317,6 @@ export function App(props: LoadedPayload) {
     });
   };
 
-  const onTileHoverEnter = (id: string, rect: DOMRect) => {
-    if (hoverTimerRef.current !== null) {
-      window.clearTimeout(hoverTimerRef.current);
-    }
-    hoverTimerRef.current = window.setTimeout(() => {
-      setHoverPeek({ id, rect });
-    }, 450);
-  };
-  const onTileHoverLeave = () => {
-    if (hoverTimerRef.current !== null) {
-      window.clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    setHoverPeek(null);
-  };
-
-  const handleModeChange = (m: InsertMode) => {
-    setMode(m);
-    if (m === 'single' && selectedIds.size > 1) {
-      const first = Array.from(selectedIds)[0];
-      setSelectedIds(new Set([first]));
-    }
-  };
 
   const openDetail = (offerId: string) => {
     setDetailOfferId(offerId);
@@ -367,6 +339,10 @@ export function App(props: LoadedPayload) {
     });
   };
 
+  /** Engine-side mode derived from selection count + the user's preferred multi layout. */
+  const engineMode: InsertMode =
+    selectedIds.size <= 1 ? 'single' : multiLayout;
+
   const insert = (offerOverride?: Offer) => {
     const payload: Offer[] = offerOverride
       ? [offerOverride]
@@ -375,7 +351,7 @@ export function App(props: LoadedPayload) {
     emit<InsertHandler>('INSERT', {
       kind: 'cards',
       offers: payload,
-      mode: offerOverride ? 'single' : mode,
+      mode: offerOverride || payload.length === 1 ? 'single' : multiLayout,
       gridColumns,
       locale,
       platform,
@@ -428,10 +404,10 @@ export function App(props: LoadedPayload) {
     // Set the MIME types Figma's figma.on('drop') handler dispatches on.
     // We send three flavours so downstream code can differentiate single
     // vs multi vs section drops without having to inspect the body shape.
-    const isMulti = mode !== 'single' && selectedIds.size > 1;
+    const isMulti = selectedIds.size > 1 && selectedIds.has(offer.id);
     if (isMulti) {
       const ids = Array.from(selectedIds);
-      const body = { offerIds: ids, locale, platform, mode };
+      const body = { offerIds: ids, locale, platform, mode: multiLayout };
       e.dataTransfer.setData(
         'application/htg-offer-multi',
         JSON.stringify(body),
@@ -447,28 +423,22 @@ export function App(props: LoadedPayload) {
     e.dataTransfer.setData('text/plain', offer.title);
     e.dataTransfer.effectAllowed = 'copy';
     attachDragImage(e, offer, locale);
-    onTileHoverLeave();
   };
 
-  const onTileDragEnd = (offer: Offer, e: DragEvent) => {
-    // Figma exposes drop coords on the dragend event when the drop
-    // landed on the canvas (vs another iframe). Falling back to the
-    // pointer coords keeps things working in browser previews.
-    const data = e as unknown as {
-      dataTransfer: DataTransfer | null;
-      clientX: number;
-      clientY: number;
-    };
-    const payload: DropPayload = {
-      offerId: offer.id,
-      clientX: data.clientX,
-      clientY: data.clientY,
-      locale,
-      platform,
-      replaceOnDrop,
-    };
-    emit<DropHandler>('DROP', payload);
+  const onSectionDragStart = (offer: Offer, kind: SectionKind, e: DragEvent) => {
+    if (!e.dataTransfer) return;
+    const body = { offerId: offer.id, sectionKind: kind, locale, platform };
+    e.dataTransfer.setData('application/htg-section', JSON.stringify(body));
+    e.dataTransfer.setData('text/plain', `${kind} · ${offer.title}`);
+    e.dataTransfer.effectAllowed = 'copy';
+    attachSectionDragImage(e, sectionDragLabel(kind, locale));
   };
+
+  // Canvas drops are handled exclusively by the main thread's
+  // figma.on('drop') registration, which gets accurate canvas coords
+  // and the node under the cursor. The iframe's dragend deliberately
+  // does nothing — doing so would create a duplicate card alongside
+  // the one figma.on('drop') already placed.
 
   // Resize: live-resize while dragging the corner handle, persist on commit.
   const handleResize = (s: UiSize) => {
@@ -496,10 +466,7 @@ export function App(props: LoadedPayload) {
           e.preventDefault();
           return;
         }
-        if (previewId) {
-          setPreviewId(null);
-          e.preventDefault();
-        } else if (level === 'detail') {
+        if (level === 'detail') {
           backToSearch();
           e.preventDefault();
         } else if (selectedIds.size > 0) {
@@ -526,42 +493,50 @@ export function App(props: LoadedPayload) {
         }
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'a' && level === 'search' && mode !== 'single') {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a' && level === 'search') {
         e.preventDefault();
         selectAllVisible();
+      }
+      // ⌘Z / Ctrl+Z fires the persistent footer Undo so designers'
+      // muscle memory works inside the plugin too. Skipped while the
+      // user is typing in an input.
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z') && !inInput && lastUndo) {
+        e.preventDefault();
+        emit<UndoHandler>('UNDO', { nodeIds: lastUndo.nodeIds });
+        setLastUndo(null);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedIds, previewId, mode, visible, level, selectedSections, detailOfferId, paletteOpen]);
+  }, [selectedIds, multiLayout, visible, level, selectedSections, detailOfferId, paletteOpen, lastUndo]);
 
-  const previewOffer = previewId ? offersById.get(previewId) ?? null : null;
   const detailOffer = detailOfferId ? offersById.get(detailOfferId) ?? null : null;
   const count = selectedIds.size;
 
-  // Plugin's primary CTA reads "Drop" (matching the HomeDrop name);
-  // the underlying message channel is still INSERT for back-compat
-  // with existing plugin-data tags.
+  // Plugin's primary CTA reads "Drop". When the user has selected 2+
+  // properties the CTA reflects the active multiLayout preference; a
+  // chevron next to the button opens a menu to switch layout.
   const insertLabel = () => {
     if (count === 0) return t('uiSelectAProperty', locale);
-    if (mode === 'single') return count === 1 ? t('uiDrop', locale) : t('uiDropN', locale, { n: count });
-    if (mode === 'list') return count === 1 ? t('uiDropAsList', locale) : t('uiDropNAsList', locale, { n: count });
-    return count === 1 ? t('uiDropAsGrid', locale) : t('uiDropNAsGrid', locale, { n: count });
+    if (count === 1) return t('uiDrop', locale);
+    return multiLayout === 'list'
+      ? t('uiDropNAsList', locale, { n: count })
+      : t('uiDropNAsGrid', locale, { n: count });
   };
 
-  const showBulkBar = level === 'search' && mode !== 'single';
+  const showBulkBar = level === 'search' && count >= 2;
   const hasActiveFilters =
     !!search ||
     sort !== 'default' ||
     Object.values(filters).some((v) => v !== undefined);
 
-  const savePreset = () => {
-    const name = window.prompt(t('uiPresetNamePrompt', locale));
-    if (!name || !name.trim()) return;
+  const savePreset = (rawName: string) => {
+    const name = rawName.trim();
+    if (!name) return;
     const preset: UiPreset = {
       id: `preset-${Date.now()}`,
-      label: name.trim(),
-      mode,
+      label: name,
+      multiLayout,
       platform,
       locale,
       gridColumns,
@@ -576,7 +551,7 @@ export function App(props: LoadedPayload) {
   };
 
   const applyPreset = (p: UiPreset) => {
-    setMode(p.mode);
+    setMultiLayout(p.multiLayout);
     setPlatform(p.platform);
     setLocale(p.locale);
     setGridColumns(p.gridColumns);
@@ -608,21 +583,16 @@ export function App(props: LoadedPayload) {
         label: t('uiPaletteDrop', locale),
         run: () => insert(),
       },
-      {
-        id: 'save-preset',
-        label: t('uiPaletteSavePreset', locale),
-        run: savePreset,
-      },
     ];
 
-    const modes: InsertMode[] = ['single', 'list', 'grid'];
-    for (const m of modes) {
+    const layouts: MultiLayout[] = ['list', 'grid'];
+    for (const m of layouts) {
       cmds.push({
-        id: `mode-${m}`,
-        label: t('uiPaletteSetMode', locale, {
-          value: t(modeLabelKey(m), locale),
+        id: `layout-${m}`,
+        label: t('uiPaletteSetLayout', locale, {
+          value: t(m === 'list' ? 'uiLayoutList' : 'uiLayoutGrid', locale),
         }),
-        run: () => handleModeChange(m),
+        run: () => setMultiLayout(m),
       });
     }
     const platforms: Platform[] = ['web', 'ios', 'android'];
@@ -659,14 +629,21 @@ export function App(props: LoadedPayload) {
       });
     }
     return cmds;
-  }, [locale, presets, mode, platform, gridColumns, sort, theme, visible]);
+  }, [locale, presets, multiLayout, platform, gridColumns, sort, theme, visible]);
 
   const deletePreset = (id: string) =>
     setPresets((all) => all.filter((p) => p.id !== id));
 
+  // Build a smart default preset name from the live settings so the
+  // user can usually just press Enter ("Web · EN · 3 cols").
+  const platformLabel = (() => {
+    const map: Record<Platform, string> = { web: 'Web', ios: 'iOS', android: 'Android' };
+    return map[platform];
+  })();
+  const layoutLabel = multiLayout === 'grid' ? `${gridColumns} cols` : 'list';
+  const presetDefaultName = `${platformLabel} · ${locale.toUpperCase()} · ${layoutLabel}`;
+
   const headerProps = {
-    mode,
-    onModeChange: handleModeChange,
     onRefresh: () => emit<RefreshHandler>('REFRESH'),
     onFindAll: () => emit<FindAllHandler>('FIND_ALL'),
     theme,
@@ -675,6 +652,7 @@ export function App(props: LoadedPayload) {
     onApplyPreset: applyPreset,
     onSavePreset: savePreset,
     onDeletePreset: deletePreset,
+    presetDefaultName,
     locale,
   };
 
@@ -722,6 +700,8 @@ export function App(props: LoadedPayload) {
           onBack={backToSearch}
           onSelectAll={selectAllSections}
           onClear={clearAllSections}
+          onSectionDragStart={(kind, e) => onSectionDragStart(detailOffer, kind, e)}
+          onCardDragStart={(e) => onTileDragStart(detailOffer, e)}
           locale={locale}
         />
         <div class={styles.footer}>
@@ -765,16 +745,6 @@ export function App(props: LoadedPayload) {
         platform={platform}
         onPlatformChange={setPlatform}
       />
-      {dropTarget && (
-        <DropTargetBanner
-          target={dropTarget}
-          replace={replaceOnDrop}
-          onReplaceChange={setReplaceOnDrop}
-          selectedCount={selectedIds.size}
-          mode={mode}
-          locale={locale}
-        />
-      )}
       <SearchBar value={search} onChange={setSearch} locale={locale} />
       <FilterBar
         filters={filters}
@@ -787,7 +757,7 @@ export function App(props: LoadedPayload) {
         total={offers.length}
         sort={sort}
         onSortChange={setSort}
-        mode={mode}
+        multiLayout={multiLayout}
         gridColumns={gridColumns}
         onGridColumnsChange={setGridColumns}
         onRandomize={randomize}
@@ -797,9 +767,7 @@ export function App(props: LoadedPayload) {
       {showBulkBar && (
         <div class={styles.bulkBar}>
           <span class={styles.bulkBarText}>
-            {count === 0
-              ? t(mode === 'list' ? 'uiPickAsList' : 'uiPickAsGrid', locale)
-              : t('uiNSelected', locale, { n: count })}
+            {t('uiNSelected', locale, { n: count })}
           </span>
           <div class={styles.bulkBarActions}>
             <button
@@ -822,8 +790,15 @@ export function App(props: LoadedPayload) {
 
       <div class={styles.scroll}>
         {loading ? (
-          <div class={styles.grid}>
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            class={styles.grid}
+            style={{
+              gridTemplateColumns: `repeat(${
+                multiLayout === 'grid' ? Math.max(2, Math.min(4, gridColumns)) : 2
+              }, 1fr)`,
+            }}
+          >
+            {Array.from({ length: multiLayout === 'grid' ? Math.max(2, Math.min(4, gridColumns)) * 2 : 6 }).map((_, i) => (
               <div key={`skeleton-${i}`} class={styles.tileSkeleton}>
                 <div class={styles.tileSkeletonImg} />
                 <div class={styles.tileSkeletonBody}>
@@ -859,7 +834,14 @@ export function App(props: LoadedPayload) {
             )}
           </div>
         ) : (
-          <div class={styles.grid}>
+          <div
+            class={styles.grid}
+            style={{
+              gridTemplateColumns: `repeat(${
+                multiLayout === 'grid' ? Math.max(2, Math.min(4, gridColumns)) : 2
+              }, 1fr)`,
+            }}
+          >
             {visible.map((o) => (
               <ProductTile
                 key={o.id}
@@ -869,12 +851,8 @@ export function App(props: LoadedPayload) {
                 pulse={pulseId === o.id}
                 onToggle={(e) => toggle(o.id, e)}
                 onToggleFavourite={() => toggleFavourite(o.id)}
-                onMouseEnter={(rect) => onTileHoverEnter(o.id, rect)}
-                onMouseLeave={onTileHoverLeave}
-                onPreview={() => setPreviewId(o.id)}
                 onOpen={() => openDetail(o.id)}
                 onDragStart={(e) => onTileDragStart(o, e)}
-                onDragEnd={(e) => onTileDragEnd(o, e)}
                 locale={locale}
               />
             ))}
@@ -885,33 +863,30 @@ export function App(props: LoadedPayload) {
       <div class={styles.footer}>
         <div class={`${styles.footerInfo} ${count > 0 ? styles.footerInfoActive : ''}`}>
           {count === 0
-            ? hintFor(mode, locale)
+            ? t('uiHintClickSingle', locale)
             : t('uiEnterToInsert', locale, { n: count })}
         </div>
-        <button
-          class={`${styles.btn} ${styles.btnPrimary}`}
-          onClick={() => insert()}
-          disabled={count === 0}
-        >
-          {insertLabel()}
-        </button>
-      </div>
-
-      {previewOffer && (
-        <PreviewModal
-          offer={previewOffer}
-          onClose={() => setPreviewId(null)}
-          onInsert={() => {
-            insert(previewOffer);
-            setPreviewId(null);
-          }}
-          onOpenDetail={() => {
-            setPreviewId(null);
-            openDetail(previewOffer.id);
-          }}
+        {lastUndo && (
+          <button
+            class={styles.footerUndoBtn}
+            onClick={() => {
+              emit<UndoHandler>('UNDO', { nodeIds: lastUndo.nodeIds });
+              setLastUndo(null);
+            }}
+            title={lastUndo.label}
+          >
+            ↺ {t('uiToastUndo', locale)}
+          </button>
+        )}
+        <DropCta
+          count={count}
+          multiLayout={multiLayout}
+          onMultiLayoutChange={setMultiLayout}
+          onDrop={() => insert()}
+          label={insertLabel()}
           locale={locale}
         />
-      )}
+      </div>
 
       <ResizeHandle
         size={uiSize}
@@ -921,26 +896,9 @@ export function App(props: LoadedPayload) {
         onCommit={handleResizeCommit}
       />
 
-      {hoverPeek && (() => {
-        const o = visible.find((x) => x.id === hoverPeek.id);
-        return o ? <HoverPeek offer={o} rect={hoverPeek.rect} locale={locale} /> : null;
-      })()}
-
       {overlays}
     </div>
   );
-}
-
-function hintFor(mode: InsertMode, locale: Locale): string {
-  if (mode === 'single') return t('uiHintClickSingle', locale);
-  if (mode === 'list') return t('uiHintPickList', locale);
-  return t('uiHintPickGrid', locale);
-}
-
-function modeLabelKey(m: InsertMode): 'uiModeSingle' | 'uiModeList' | 'uiModeGrid' {
-  if (m === 'single') return 'uiModeSingle';
-  if (m === 'list') return 'uiModeList';
-  return 'uiModeGrid';
 }
 
 function themeLabelKey(th: Theme): 'uiThemeAuto' | 'uiThemeLight' | 'uiThemeDark' {
@@ -965,5 +923,22 @@ function sectionHasData(kind: SectionKind, offer: Offer | undefined): boolean {
     default:
       return true;
   }
+}
+
+function sectionDragLabel(kind: SectionKind, locale: Locale): string {
+  const tileKey = `uiTile${kind.charAt(0).toUpperCase()}${kind.slice(1)}` as
+    | 'uiTileGallery'
+    | 'uiTileTitleHeader'
+    | 'uiTileQuickFacts'
+    | 'uiTileReasonsToBook'
+    | 'uiTileReviews'
+    | 'uiTileAmenities'
+    | 'uiTileRoomInformation'
+    | 'uiTileDescription'
+    | 'uiTileHouseRules'
+    | 'uiTileLocation'
+    | 'uiTilePriceBreakdown'
+    | 'uiTileCancellationPolicy';
+  return t(tileKey, locale);
 }
 

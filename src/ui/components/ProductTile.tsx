@@ -1,4 +1,5 @@
 import { h } from 'preact';
+import { useState } from 'preact/hooks';
 import styles from '../styles.css';
 import type { Offer } from '@shared/types';
 import type { Locale } from '@shared/locales';
@@ -12,13 +13,9 @@ interface Props {
   /** When true, render a brief outline pulse (canvas selection echo). */
   pulse?: boolean;
   onToggle: (e: MouseEvent) => void;
-  onPreview: () => void;
   onOpen: () => void;
   onToggleFavourite: () => void;
-  onMouseEnter?: (rect: DOMRect) => void;
-  onMouseLeave?: () => void;
   onDragStart?: (e: DragEvent) => void;
-  onDragEnd?: (e: DragEvent) => void;
   locale: Locale;
 }
 
@@ -28,17 +25,17 @@ export function ProductTile({
   favourite,
   pulse,
   onToggle,
-  onPreview,
   onOpen,
   onToggleFavourite,
-  onMouseEnter,
-  onMouseLeave,
   onDragStart,
-  onDragEnd,
   locale,
 }: Props) {
   const badge = offer.badges[0];
   const isDeal = badge === 'great_deal';
+  // Brief CSS animation after every favourite toggle. The bounceKey
+  // bumps so React replays the keyframe even when favourite state
+  // doesn't change shape (e.g. star → empty → star).
+  const [bounceKey, setBounceKey] = useState(0);
 
   return (
     <div
@@ -47,18 +44,17 @@ export function ProductTile({
       data-offer-id={offer.id}
       draggable={!!onDragStart}
       onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onMouseEnter={(e) => {
-        if (onMouseEnter) {
-          onMouseEnter((e.currentTarget as HTMLElement).getBoundingClientRect());
-        }
-      }}
-      onMouseLeave={onMouseLeave}
     >
       <div
         class={styles.tileImage}
         style={{ backgroundImage: `url(${offer.images[0]?.url})` }}
       >
+        <span
+          class={`${styles.tileSelectBox} ${selected ? styles.tileSelectBoxOn : ''}`}
+          aria-hidden="true"
+        >
+          {selected ? '✓' : ''}
+        </span>
         {badge && (
           <span class={`${styles.tileBadge} ${isDeal ? styles.tileBadgeGreen : ''}`}>
             {badge.replace(/_/g, ' ')}
@@ -72,24 +68,18 @@ export function ProductTile({
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavourite();
+            setBounceKey((k) => k + 1);
           }}
           title={t(favourite ? 'uiFavouriteRemove' : 'uiFavouriteAdd', locale)}
           aria-pressed={favourite}
         >
-          {favourite ? '★' : '☆'}
+          <span key={bounceKey} class={styles.tileFavStar} aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={favourite ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21l8.84-8.61a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </span>
         </button>
-        {selected && <span class={styles.tileCheck}>✓</span>}
         <div class={styles.tileHoverActions}>
-          <button
-            class={styles.tileHoverBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              onPreview();
-            }}
-            title={t('uiPreviewTooltip', locale)}
-          >
-            i
-          </button>
           <button
             class={styles.tileHoverBtn}
             onClick={(e) => {

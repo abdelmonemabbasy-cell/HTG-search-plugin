@@ -100,42 +100,38 @@ Create a frame named `HTG Card` containing:
 - A `TEXT` layer named `#location`
 - A `TEXT` layer named `#pricePerNight`
 
-Select it, run the plugin, pick a property, click **Insert**. Done.
+Select the frame (or any single `#fieldName` text/shape layer), run
+the plugin, pick a property, click **Drop**. Done.
 
 ## How populate fires
 
-There are four user actions that can trigger `populateSelection()`:
+The same target inference runs whether the user clicks the **Drop**
+CTA or drags a tile. The plugin checks the target in this order:
 
-1. **Click "Drop" in single mode with a non-HomeDrop frame selected.**
-   If that frame contains any `#fieldName` child layers,
-   `populateSelection` runs and overrides them in place. Otherwise the
-   plugin falls back to inserting a new card (same path as no
-   selection).
-2. **Drag a tile onto a frame with `#fieldName` children.** The native
-   `figma.on('drop')` handler resolves `event.node` to the target
-   frame and runs `populateSelection` against it.
-3. **`INSERT` message with `dropInto.targetId` set.** The
-   `DropTargetBanner` populates this when the user has a frame
-   selected. Replace toggle is separate (it only matters when the
-   frame has no `#fieldName` layers).
-4. **Refresh.** When the user runs Refresh on selected HomeDrop nodes,
-   the main thread rebuilds each via `buildCard` / `buildSection`. If
-   the selected node was originally a populated frame (i.e. has
-   `htgOfferId` plugin-data but no `htgSectionKind`), the rebuild path
-   re-runs `populateSelection` against fresh data.
+1. **Single `#fieldName` text/shape selected (or dropped on).** Calls
+   `populateNode` to fill *that one node* with the matching offer
+   field. Pick a `#title` text layer, click Drop → the layer's text
+   becomes the property title.
+2. **Frame with `#fieldName` descendants selected (or dropped on).**
+   Calls `populateSelection` to walk the subtree and fill every
+   matching layer.
+3. **Plain frame (drag only).** No `#field` descendants → the card is
+   appended as a child of the frame.
+4. **No selection / empty canvas.** A fresh card lands at the
+   viewport centre (CTA) or at the cursor (drag).
 
-In all four cases, the matched layers are overridden in the chosen
-locale; `figma.loadFontAsync` is awaited before any `TextNode.characters`
-assignment.
+A fifth implicit trigger is **Refresh**: when the user runs Refresh
+on selected HomeDrop nodes, the main thread rebuilds each via
+`buildCard` / `buildSection`. If the selected node was originally a
+populated frame (it has `htgOfferId` plugin-data but no
+`htgSectionKind`), the rebuild path re-runs `populateSelection`
+against fresh data.
 
-## Drag and drop (v0.7)
+In all paths, the matched layers are overridden in the chosen
+locale; `figma.loadFontAsync` is awaited before any
+`TextNode.characters` assignment.
 
-You can also **drag a tile from the plugin onto your frame** instead of
-clicking Insert:
-
-- Drop on a frame whose children include `#fieldName` layers → those
-  layers populate, exactly as if you'd clicked Insert in Single mode.
-- Drop on any other selected frame → the generated HomeDrop card is filled
-  in as a child of that frame. The "Drop into 'X'" banner inside the
-  plugin lets you toggle **Replace** to clear existing children first.
-- Drop on empty canvas → the card lands at the drop point.
+> **Note:** The "Drop into 'X' with Replace" banner that used to
+> wrap step 3 was removed in 0.9. Drag-onto-plain-frame now always
+> appends; if you need to replace a frame's contents, clear the
+> children manually before dropping.

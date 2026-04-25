@@ -13,13 +13,11 @@ interface Props {
 }
 
 export function LocaleBar({ locale, onLocaleChange, platform, onPlatformChange }: Props) {
-  const current = LOCALES.find((l) => l.id === locale) ?? LOCALES[0];
   return (
     <div class={styles.localeBar}>
       <div class={styles.localeGroup}>
         <span class={styles.localeGroupLabel}>{t('uiMarket', locale)}</span>
         <div class={styles.marketSelectWrap}>
-          <span class={styles.marketSelectFlag}>{current.flag}</span>
           <select
             class={styles.marketSelect}
             value={locale}
@@ -27,7 +25,7 @@ export function LocaleBar({ locale, onLocaleChange, platform, onPlatformChange }
           >
             {LOCALES.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.flag}  {l.label} ({l.id.toUpperCase()})
+                {l.flag} {l.label}
               </option>
             ))}
           </select>

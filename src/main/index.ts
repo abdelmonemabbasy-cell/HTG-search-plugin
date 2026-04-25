@@ -1,8 +1,6 @@
 import { emit, on, showUI } from '@create-figma-plugin/utilities';
 import type { Offer } from '@shared/types';
 import type {
-  DropHandler,
-  DropPayload,
   FindAllHandler,
   HighlightHandler,
   InsertCardsPayload,
@@ -17,8 +15,6 @@ import type {
   SaveStateHandler,
   SaveUiSizeHandler,
   SectionKind,
-  SelectionTargetHandler,
-  SelectionTarget,
   SyncOffersHandler,
   UiSize,
   UiState,
@@ -30,10 +26,11 @@ import { PLATFORM_SPEC } from '@shared/platforms';
 import { buildCard } from './generate';
 import { buildSection } from './sections';
 import {
-  fillIntoTarget,
   firstTargetInSelection,
   hasFieldNames,
+  populateNode,
   populateSelection,
+  singleFieldNodeInSelection,
 } from './populate';
 
 // Catalogue cache. Populated by the UI via SYNC_OFFERS on every
@@ -93,10 +90,6 @@ export default async function () {
     await insertLevel1(payload);
   });
 
-  on<DropHandler>('DROP', async (payload) => {
-    await handleDrop(payload);
-  });
-
   on<UndoHandler>('UNDO', async ({ nodeIds }) => {
     let removed = 0;
     for (const id of nodeIds) {
@@ -135,12 +128,12 @@ export default async function () {
   on<RefreshHandler>('REFRESH', async () => {
     const selection = figma.currentPage.selection;
     if (selection.length === 0) {
-      figma.notify('Select one or more HomeDrop cards first.', { error: true });
+      figma.notify('Select one or more HomeDrop cards first');
       return;
     }
     const tagged = collectTaggedFrames(selection);
     if (tagged.length === 0) {
-      figma.notify('No inserted HomeDrop cards in the current selection.', { error: true });
+      figma.notify('No inserted HomeDrop cards in the current selection');
       return;
     }
     let refreshed = 0;
@@ -176,14 +169,11 @@ export default async function () {
   // Wire canvas → UI awareness. We surface two things on every selection
   // change: the offerId of a tagged HomeDrop card (so the matching tile
   // can pulse), and the "drop target" — a frame the user has selected so
-  // the UI can show the "Drop into 'X'" banner with a Replace toggle.
   figma.on('selectionchange', () => {
     pushHighlight();
-    pushSelectionTarget();
   });
   // Initial push so the UI starts in sync.
   pushHighlight();
-  pushSelectionTarget();
 
   // Native Figma drop event. Fires when the user releases a drag from
   // the plugin iframe over the canvas. We dispatch on three MIME types:
@@ -248,13 +238,60 @@ async function handleNativeDropOffer(
 ): Promise<void> {
   const offer = OFFER_BY_ID[offerId];
   if (!offer) return;
+
+  // Dropped directly onto a #field-named text/shape: fill that one node.
+  const targetNode = event.node as SceneNode;
+  if (
+    targetNode &&
+    targetNode.name?.startsWith('#') &&
+    (targetNode.type === 'TEXT' ||
+      targetNode.type === 'RECTANGLE' ||
+      targetNode.type === 'ELLIPSE')
+  ) {
+    const ok = await populateNode(targetNode, offer, locale);
+    if (ok) {
+      const label = `Filled "${targetNode.name.replace(/^#/, '')}"`;
+      figma.notify(label);
+      emit<InsertedHandler>('INSERTED', {
+        createdNodeIds: [],
+        label,
+        kind: 'populated',
+      });
+      return;
+    }
+  }
+
+  // Dropped onto a frame with #field descendants: fill them all.
+  const dropTarget = nativeDropTargetFrame(event);
+  if (dropTarget && hasFieldNames(dropTarget)) {
+    const filled = await populateSelection(dropTarget, offer, locale);
+    if (filled > 0) {
+      const label = filled === 1 ? 'Filled 1 field' : `Filled ${filled} fields`;
+      figma.notify(label);
+      emit<InsertedHandler>('INSERTED', {
+        createdNodeIds: [],
+        label,
+        kind: 'populated',
+      });
+      return;
+    }
+  }
+
   const card = await buildCard(offer, locale, platform);
   await landAtDropEvent(card, event);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: [card.id],
-    label: `Dropped "${offer.title}" on the canvas.`,
+    label: 'Card dropped',
     kind: 'dropped',
   });
+}
+
+function nativeDropTargetFrame(event: DropEvent): FrameNode | null {
+  const n = event.node;
+  if (n.type === 'FRAME' || n.type === 'COMPONENT' || n.type === 'INSTANCE') {
+    return n as FrameNode;
+  }
+  return null;
 }
 
 async function handleNativeDropMulti(
@@ -274,7 +311,7 @@ async function handleNativeDropMulti(
   }
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: created.map((n) => n.id),
-    label: `Dropped ${offers.length} properties as a ${mode}.`,
+    label: `${offers.length} cards dropped`,
     kind: 'dropped',
   });
 }
@@ -292,7 +329,7 @@ async function handleNativeDropSection(
   await landAtDropEvent(node, event);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: [node.id],
-    label: `Dropped "${kind}" for "${offer.title}".`,
+    label: 'Section dropped',
     kind: 'dropped',
   });
 }
@@ -342,27 +379,6 @@ function pushHighlight(): void {
   emit<HighlightHandler>('HIGHLIGHT_OFFER', { offerId });
 }
 
-function pushSelectionTarget(): void {
-  const sel = figma.currentPage.selection;
-  const target = firstTargetInSelection(sel);
-  if (!target) {
-    emit<SelectionTargetHandler>('SELECTION_TARGET', { target: null });
-    return;
-  }
-  // Skip nodes that are themselves an inserted HomeDrop card — they
-  // aren't useful drop targets, only refresh targets.
-  if (target.getPluginData('htgOfferId')) {
-    emit<SelectionTargetHandler>('SELECTION_TARGET', { target: null });
-    return;
-  }
-  const info: SelectionTarget = {
-    id: target.id,
-    name: target.name || 'Frame',
-    hasFieldNames: hasFieldNames(target),
-  };
-  emit<SelectionTargetHandler>('SELECTION_TARGET', { target: info });
-}
-
 function collectTaggedFrames(selection: readonly SceneNode[]): FrameNode[] {
   const out: FrameNode[] = [];
   const visit = (node: SceneNode) => {
@@ -382,29 +398,48 @@ async function insertLevel1(payload: InsertCardsPayload): Promise<void> {
   const { offers, mode, gridColumns, locale, platform } = payload;
   if (offers.length === 0) return;
 
-  const target = firstTargetInSelection(figma.currentPage.selection);
-  if (target && mode === 'single' && offers.length === 1) {
-    const filled = await populateSelection(target, offers[0], locale);
-    if (filled > 0) {
-      figma.notify(
-        `Populated ${filled} layer${filled === 1 ? '' : 's'} in "${target.name}"`,
-      );
-      return;
+  // Single-card single-offer with a populate-eligible selection routes
+  // through the populate path instead of dropping a new card. We support
+  // two shapes: a single #field text/shape layer (fill that one), or a
+  // frame whose descendants include #field layers (fill them all).
+  if (mode === 'single' && offers.length === 1) {
+    const sel = figma.currentPage.selection;
+    const single = singleFieldNodeInSelection(sel);
+    if (single) {
+      const ok = await populateNode(single, offers[0], locale);
+      if (ok) {
+        const label = `Filled "${single.name.replace(/^#/, '')}"`;
+        figma.notify(label);
+        emit<InsertedHandler>('INSERTED', {
+          createdNodeIds: [],
+          label,
+          kind: 'populated',
+        });
+        return;
+      }
     }
-    figma.notify(
-      `No #fieldName layers in "${target.name}" — inserting a new card instead.`,
-    );
+    const target = firstTargetInSelection(sel);
+    if (target) {
+      const filled = await populateSelection(target, offers[0], locale);
+      if (filled > 0) {
+        const label = filled === 1 ? 'Filled 1 field' : `Filled ${filled} fields`;
+        figma.notify(label);
+        emit<InsertedHandler>('INSERTED', {
+          createdNodeIds: [],
+          label,
+          kind: 'populated',
+        });
+        return;
+      }
+      figma.notify('No #fields found — dropped a card instead');
+    }
   }
 
   const created = await insertCards(offers, mode, gridColumns, locale, platform);
   figma.currentPage.selection = created;
   figma.viewport.scrollAndZoomIntoView(created);
 
-  const verb = mode === 'grid' ? 'grid' : mode === 'list' ? 'list' : 'card';
-  const label =
-    offers.length === 1
-      ? `Inserted "${offers[0].title}" (${platform}, ${locale.toUpperCase()})`
-      : `Inserted ${offers.length} properties as a ${verb}`;
+  const label = offers.length === 1 ? 'Card dropped' : `${offers.length} cards dropped`;
   figma.notify(label);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: created.map((n) => n.id),
@@ -481,7 +516,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
   const { offerId, sections, locale, platform } = payload;
   const offer = OFFER_BY_ID[offerId];
   if (!offer || sections.length === 0) {
-    figma.notify('Pick at least one section to insert.', { error: true });
+    figma.notify('Pick at least one section to drop');
     return;
   }
 
@@ -493,7 +528,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
     figma.currentPage.appendChild(node);
     figma.currentPage.selection = [node];
     figma.viewport.scrollAndZoomIntoView([node]);
-    const label = `Inserted "${sections[0]}" for "${offer.title}"`;
+    const label = 'Section dropped';
     figma.notify(label);
     emit<InsertedHandler>('INSERTED', {
       createdNodeIds: [node.id],
@@ -511,7 +546,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
   container.layoutMode = 'VERTICAL';
   container.primaryAxisSizingMode = 'AUTO';
   container.counterAxisSizingMode = 'AUTO';
-  container.itemSpacing = platform === 'web' ? LAYOUT_GAP : 0;
+  container.itemSpacing = LAYOUT_GAP;
   container.fills = [];
   container.paddingTop = container.paddingBottom = 0;
   container.paddingLeft = container.paddingRight = 0;
@@ -528,7 +563,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
 
   figma.currentPage.selection = [container];
   figma.viewport.scrollAndZoomIntoView([container]);
-  const label = `Inserted ${sections.length} detail sections for "${offer.title}"`;
+  const label = `${sections.length} sections dropped`;
   figma.notify(label);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: [container.id],
@@ -537,80 +572,3 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
   });
 }
 
-type DropMode = 'populate' | 'fill' | 'viewport';
-
-/**
- * Picks where a tile-drop should land based on:
- *   - whether the user has a frame selected,
- *   - whether that frame has any #fieldName layers (populate-eligible),
- *   - and the user's Replace toggle state.
- *
- * Rules:
- *   selection has #fields  → populate (Replace toggle ignored)
- *   selection w/o #fields  → fill    (Replace flag determines clear vs append)
- *   no selection           → viewport (drop at canvas coords)
- */
-function resolveDropTarget(
-  target: ReturnType<typeof firstTargetInSelection>,
-): DropMode {
-  if (!target) return 'viewport';
-  if (target.getPluginData('htgOfferId')) return 'viewport';
-  return hasFieldNames(target) ? 'populate' : 'fill';
-}
-
-async function handleDrop(payload: DropPayload): Promise<void> {
-  const { offerId, locale, platform, canvasX, canvasY, replaceOnDrop } = payload;
-  const offer = OFFER_BY_ID[offerId];
-  if (!offer) return;
-
-  const target = firstTargetInSelection(figma.currentPage.selection);
-  const mode = resolveDropTarget(target);
-
-  if (mode === 'populate' && target) {
-    const filled = await populateSelection(target, offer, locale);
-    if (filled > 0) {
-      const label = `Populated ${filled} layer${filled === 1 ? '' : 's'} in "${target.name}".`;
-      figma.notify(label);
-      emit<InsertedHandler>('INSERTED', {
-        createdNodeIds: [],
-        label,
-        kind: 'populated',
-      });
-      return;
-    }
-    // No layer keys matched — fall through to fill.
-  }
-
-  if ((mode === 'fill' || mode === 'populate') && target) {
-    const card = await buildCard(offer, locale, platform);
-    fillIntoTarget(target, card, { replaceContents: !!replaceOnDrop });
-    figma.currentPage.selection = [card];
-    const label = `${replaceOnDrop ? 'Replaced into' : 'Dropped into'} "${target.name}".`;
-    figma.notify(label);
-    emit<InsertedHandler>('INSERTED', {
-      createdNodeIds: [card.id],
-      label,
-      kind: replaceOnDrop ? 'replaced' : 'dropped',
-    });
-    return;
-  }
-
-  // Viewport fallback: place the card at the drop point on the page.
-  const card = await buildCard(offer, locale, platform);
-  if (typeof canvasX === 'number' && typeof canvasY === 'number') {
-    card.x = canvasX - card.width / 2;
-    card.y = canvasY - card.height / 2;
-  } else {
-    card.x = figma.viewport.center.x - card.width / 2;
-    card.y = figma.viewport.center.y - card.height / 2;
-  }
-  figma.currentPage.appendChild(card);
-  figma.currentPage.selection = [card];
-  const label = `Dropped "${offer.title}" on the canvas.`;
-  figma.notify(label);
-  emit<InsertedHandler>('INSERTED', {
-    createdNodeIds: [card.id],
-    label,
-    kind: 'dropped',
-  });
-}

@@ -63,3 +63,39 @@ export function attachDragImage(
   setTimeout(cleanup, 0);
   return cleanup;
 }
+
+/**
+ * Smaller pill-shaped drag preview for section tiles. Section drops
+ * deliberately don't include the property image (which would dominate
+ * the ghost) — just the section label keeps the cursor compact.
+ */
+export function attachSectionDragImage(e: DragEvent, label: string): () => void {
+  if (!e.dataTransfer) return () => {};
+
+  const ghost = document.createElement('div');
+  ghost.style.cssText = [
+    'position: fixed',
+    'top: -1000px',
+    'left: -1000px',
+    'padding: 8px 14px',
+    'background: var(--htg-card)',
+    'border: 1px solid var(--htg-border)',
+    'border-radius: 999px',
+    'box-shadow: 0 8px 24px rgba(14,24,36,0.18)',
+    "font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    'font-size: 12px',
+    'font-weight: 600',
+    'color: var(--htg-text)',
+    'white-space: nowrap',
+  ].join(';');
+  ghost.textContent = label;
+
+  document.body.appendChild(ghost);
+  e.dataTransfer.setDragImage(ghost, 16, 16);
+
+  const cleanup = () => {
+    if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
+  };
+  setTimeout(cleanup, 0);
+  return cleanup;
+}

@@ -69,7 +69,7 @@ screen chrome.
   (see `docs/LAYER_NAMING_SPEC.md`) is the contract between the two.
 - **Production icon set.** The PoC ships generic line icons; the HTG icon
   library will replace them.
-- **Persistence.** Client-storage of last search / filters / mode is a v2 nice-to-have.
+- **Persistence.** Client-storage of last search / filters / multiLayout is a v2 nice-to-have.
 - **Undo affordances beyond Figma's own.** We don't track our own history.
 - **Localised formatting.** Currency symbols are EUR/GBP/USD only; prices use
   `en-US` number formatting.
@@ -84,30 +84,37 @@ screen chrome.
 1. Designer opens HomeDrop, picks a property, clicks **Drop** → a
    full HomeToGo product card appears on canvas, ready to slot into
    their mockup.
-2. Designer switches to **List** or **Grid** mode, multi-selects 3–5
-   properties (shift / cmd-click), clicks **Drop** → an auto-layout
-   container with populated cards is placed.
-3. Designer selects a frame with `#title` / `#pricePerNight` /
-   `#image` layers and clicks **Drop** in Single mode → those layers
-   are overridden in place (no new card is created).
-4. Designer drags a tile from the plugin onto the canvas → card
-   lands at the cursor position via `figma.on('drop')`.
-5. Designer drags a tile onto a non-`#field` frame → card is filled
-   in as a child of that frame; the "Drop into 'X'" banner offers a
-   Replace toggle.
-6. Designer toggles between Auto / Light / Dark → the plugin colour
-   scheme flips immediately and persists across sessions.
-7. Designer resizes the plugin window via the corner handle → new
+2. Designer multi-selects 3–5 properties (shift / cmd-click), opens
+   the split-button CTA chevron, picks **Drop as list** or **Drop as
+   grid** → an auto-layout container with populated cards is placed.
+   Layout choice persists for the next multi-drop.
+3. Designer selects a single text layer named `#title` and clicks
+   **Drop** → that one layer's text becomes the property title (no
+   new card created). Same for `#image`, `#pricePerNight`, etc.
+4. Designer selects a frame with several `#fieldName` descendants
+   and clicks **Drop** → every matching descendant fills in place.
+5. Designer drills into a property (Level 2), picks 3 sections, and
+   clicks **Drop sections** → those sections drop as a single
+   vertical auto-layout container with 16 px gap (web + iOS +
+   Android).
+6. Designer drags a tile (or the detail-page hero) onto the canvas →
+   card lands at the cursor via `figma.on('drop')`. Drag onto a
+   `#field` text/shape fills it; drag onto a frame with `#field`
+   descendants populates them all.
+7. Designer toggles between Auto / Light / Dark → the plugin colour
+   scheme flips immediately, dark mode reads as native Figma chrome,
+   and the choice persists across sessions.
+8. Designer resizes the plugin window via the corner handle → new
    size persists across sessions.
-8. Designer multi-selects via shift / cmd, stars favourites,
+9. Designer hearts a few tiles, opens the Favourites filter chip,
    randomises with `R`, opens the ⌘K palette → all behaviours work
    without lag and persist what they should.
-9. Designer presses Undo on the toast after any successful drop →
-   the freshly-placed nodes are removed.
-10. Designer runs Refresh on selected HomeDrop cards → cards rebuild
+10. Designer presses Undo on the toast (or the persistent footer
+    Undo pill, or `⌘Z`) after any successful drop → the freshly-
+    placed nodes are removed.
+11. Designer runs Refresh on selected HomeDrop cards → cards rebuild
     against the current data in the same locale + platform they were
     inserted in.
-11. Demo runs end-to-end without internet access beyond the Unsplash
-    allowlist.
-12. The decision to build v2 (API-backed) is informed by what the
-    demo reveals.
+12. Demo runs end-to-end without internet access beyond the Unsplash
+    allowlist. The decision to build v2 (API-backed) is informed by
+    what the demo reveals.
