@@ -818,8 +818,15 @@ export function App(props: LoadedPayload) {
 
       <div class={styles.scroll}>
         {loading ? (
-          <div class={styles.grid}>
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            class={styles.grid}
+            style={{
+              gridTemplateColumns: `repeat(${
+                mode === 'grid' ? Math.max(2, Math.min(4, gridColumns)) : 2
+              }, 1fr)`,
+            }}
+          >
+            {Array.from({ length: mode === 'grid' ? Math.max(2, Math.min(4, gridColumns)) * 2 : 6 }).map((_, i) => (
               <div key={`skeleton-${i}`} class={styles.tileSkeleton}>
                 <div class={styles.tileSkeletonImg} />
                 <div class={styles.tileSkeletonBody}>
@@ -855,7 +862,14 @@ export function App(props: LoadedPayload) {
             )}
           </div>
         ) : (
-          <div class={styles.grid}>
+          <div
+            class={styles.grid}
+            style={{
+              gridTemplateColumns: `repeat(${
+                mode === 'grid' ? Math.max(2, Math.min(4, gridColumns)) : 2
+              }, 1fr)`,
+            }}
+          >
             {visible.map((o) => (
               <ProductTile
                 key={o.id}
@@ -905,6 +919,7 @@ export function App(props: LoadedPayload) {
             setPreviewId(null);
             openDetail(previewOffer.id);
           }}
+          onDragStart={(e) => onTileDragStart(previewOffer, e)}
           locale={locale}
         />
       )}

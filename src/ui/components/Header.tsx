@@ -4,6 +4,7 @@ import type { InsertMode, Theme, UiPreset } from '@shared/messages';
 import type { Locale, StringKey } from '@shared/locales';
 import { t } from '@shared/locales';
 import { PresetsMenu } from './PresetsMenu';
+import { HelpMenu } from './HelpMenu';
 import styles from '../styles.css';
 
 interface Props {
@@ -115,6 +116,7 @@ export function Header({
           onDelete={onDeletePreset}
           locale={locale}
         />
+        <HelpMenu locale={locale} />
         <button
           class={styles.iconBtn}
           onClick={onRefresh}

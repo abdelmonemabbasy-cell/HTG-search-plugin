@@ -18,6 +18,8 @@ declare const styles: {
   readonly "detail": string;
   readonly "detailBackBtn": string;
   readonly "detailBreadcrumb": string;
+  readonly "detailBreadcrumbSep": string;
+  readonly "detailBreadcrumbTitle": string;
   readonly "detailCategory": string;
   readonly "detailHero": string;
   readonly "detailHeroOverlay": string;
@@ -52,6 +54,15 @@ declare const styles: {
   readonly "grid": string;
   readonly "header": string;
   readonly "headerRight": string;
+  readonly "helpDropdown": string;
+  readonly "helpHeading": string;
+  readonly "helpItem": string;
+  readonly "helpItemBody": string;
+  readonly "helpItemHint": string;
+  readonly "helpItemRow": string;
+  readonly "helpItemTitle": string;
+  readonly "helpList": string;
+  readonly "helpMenu": string;
   readonly "hoverPeek": string;
   readonly "hoverPeekBody": string;
   readonly "hoverPeekImg": string;
@@ -85,6 +96,7 @@ declare const styles: {
   readonly "modalBody": string;
   readonly "modalClose": string;
   readonly "modalDescription": string;
+  readonly "modalDragHint": string;
   readonly "modalImage": string;
   readonly "modalLocation": string;
   readonly "modalOverlay": string;
@@ -138,8 +150,10 @@ declare const styles: {
   readonly "sectionTileCheck": string;
   readonly "sectionTileDescription": string;
   readonly "sectionTileDisabled": string;
+  readonly "sectionTileIcon": string;
   readonly "sectionTileLabel": string;
   readonly "sectionTileSelected": string;
+  readonly "sectionTileText": string;
   readonly "slideUp": string;
   readonly "sortBar": string;
   readonly "sortBarRight": string;

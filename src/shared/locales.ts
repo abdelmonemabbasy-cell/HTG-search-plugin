@@ -199,6 +199,21 @@ export type StringKey =
   | 'uiHoverPeekTitle'
   | 'uiFindAll'
   | 'uiFindAllTooltip'
+  | 'uiHelpTooltip'
+  | 'uiHelpQuickGuide'
+  | 'uiHelpDropTitle'
+  | 'uiHelpDropBody'
+  | 'uiHelpDragTitle'
+  | 'uiHelpDragBody'
+  | 'uiHelpPopulateTitle'
+  | 'uiHelpPopulateBody'
+  | 'uiHelpReplaceTitle'
+  | 'uiHelpReplaceBody'
+  | 'uiHelpPaletteTitle'
+  | 'uiHelpPaletteBody'
+  | 'uiHelpMultiTitle'
+  | 'uiHelpMultiBody'
+  | 'uiPreviewDragHint'
   | 'uiDrop'
   | 'uiDropN'
   | 'uiDropAsList'
@@ -393,6 +408,21 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHoverPeekTitle: 'Quick look',
     uiFindAll: 'Find all',
     uiFindAllTooltip: 'Find all HomeDrop cards on this page',
+    uiHelpTooltip: 'Help & shortcuts',
+    uiHelpQuickGuide: 'Quick guide',
+    uiHelpDropTitle: 'Drop a card',
+    uiHelpDropBody: 'Pick a property and click the Drop button — it lands at the canvas centre.',
+    uiHelpDragTitle: 'Drag onto canvas',
+    uiHelpDragBody: 'Grab any tile and drag it onto the canvas to drop a card at the cursor.',
+    uiHelpPopulateTitle: 'Populate #fields',
+    uiHelpPopulateBody: 'Select a frame whose layers are named #title, #image, #pricePerNight, etc. and drop — the plugin fills them in place.',
+    uiHelpReplaceTitle: 'Drop into a frame',
+    uiHelpReplaceBody: 'Select a frame and use the banner. Toggle Replace to clear its children before the new card lands.',
+    uiHelpPaletteTitle: 'Command palette',
+    uiHelpPaletteBody: 'Open with ⌘K (Ctrl+K). Switch mode, platform, locale, theme, presets — or run Drop / Random / Refresh / Find all.',
+    uiHelpMultiTitle: 'Multi-select',
+    uiHelpMultiBody: 'In List or Grid mode: shift-click for a range, ⌘/Ctrl-click to add or remove individual tiles.',
+    uiPreviewDragHint: 'Drag onto canvas',
     uiDrop: 'Drop',
     uiDropN: 'Drop {n}',
     uiDropAsList: 'Drop as list',
@@ -586,6 +616,21 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHoverPeekTitle: 'Kurzansicht',
     uiFindAll: 'Alle finden',
     uiFindAllTooltip: 'Alle HomeDrop-Karten auf dieser Seite finden',
+    uiHelpTooltip: 'Hilfe & Shortcuts',
+    uiHelpQuickGuide: 'Kurzanleitung',
+    uiHelpDropTitle: 'Karte ablegen',
+    uiHelpDropBody: 'Unterkunft wählen und auf Ablegen klicken — die Karte landet in der Canvas-Mitte.',
+    uiHelpDragTitle: 'Auf Canvas ziehen',
+    uiHelpDragBody: 'Beliebiges Feld greifen und auf das Canvas ziehen, um eine Karte am Cursor abzulegen.',
+    uiHelpPopulateTitle: '#fields füllen',
+    uiHelpPopulateBody: 'Frame mit Ebenen wie #title, #image, #pricePerNight wählen und ablegen — der Plugin füllt sie an Ort und Stelle.',
+    uiHelpReplaceTitle: 'In einen Frame ablegen',
+    uiHelpReplaceBody: 'Frame markieren und das Banner nutzen. Mit Replace werden vorhandene Inhalte vorher gelöscht.',
+    uiHelpPaletteTitle: 'Befehlspalette',
+    uiHelpPaletteBody: 'Mit ⌘K (Strg+K) öffnen. Modus, Plattform, Sprache, Theme, Presets wechseln — oder Drop / Zufall / Aktualisieren / Alle finden.',
+    uiHelpMultiTitle: 'Mehrfachauswahl',
+    uiHelpMultiBody: 'Im Listen- oder Rastermodus: Shift-Klick für einen Bereich, ⌘/Strg-Klick zum gezielten Hinzufügen oder Entfernen.',
+    uiPreviewDragHint: 'Auf Canvas ziehen',
     uiDrop: 'Ablegen',
     uiDropN: '{n} ablegen',
     uiDropAsList: 'Als Liste ablegen',
@@ -779,6 +824,21 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHoverPeekTitle: 'Vista rápida',
     uiFindAll: 'Buscar todas',
     uiFindAllTooltip: 'Buscar todas las tarjetas HomeDrop en esta página',
+    uiHelpTooltip: 'Ayuda y atajos',
+    uiHelpQuickGuide: 'Guía rápida',
+    uiHelpDropTitle: 'Soltar tarjeta',
+    uiHelpDropBody: 'Selecciona una propiedad y pulsa Soltar — aparece en el centro del lienzo.',
+    uiHelpDragTitle: 'Arrastrar al lienzo',
+    uiHelpDragBody: 'Arrastra cualquier tarjeta al lienzo para soltarla bajo el cursor.',
+    uiHelpPopulateTitle: 'Rellenar #fields',
+    uiHelpPopulateBody: 'Selecciona un frame con capas #title, #image, #pricePerNight y suelta — el plugin las rellena.',
+    uiHelpReplaceTitle: 'Soltar en un frame',
+    uiHelpReplaceBody: 'Selecciona un frame y usa el banner. Con Replace se borran los hijos antes de soltar.',
+    uiHelpPaletteTitle: 'Paleta de comandos',
+    uiHelpPaletteBody: 'Abre con ⌘K (Ctrl+K). Cambia modo, plataforma, idioma, tema, presets — o ejecuta Soltar / Aleatorio / Actualizar / Buscar todo.',
+    uiHelpMultiTitle: 'Selección múltiple',
+    uiHelpMultiBody: 'En modo Lista o Cuadrícula: shift-clic para un rango, ⌘/Ctrl-clic para añadir o quitar tarjetas.',
+    uiPreviewDragHint: 'Arrastrar al lienzo',
     uiDrop: 'Soltar',
     uiDropN: 'Soltar {n}',
     uiDropAsList: 'Soltar como lista',
@@ -972,6 +1032,21 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHoverPeekTitle: 'Aperçu rapide',
     uiFindAll: 'Tout trouver',
     uiFindAllTooltip: 'Trouver toutes les fiches HomeDrop sur cette page',
+    uiHelpTooltip: 'Aide & raccourcis',
+    uiHelpQuickGuide: 'Guide rapide',
+    uiHelpDropTitle: 'Déposer une fiche',
+    uiHelpDropBody: 'Choisissez une propriété et cliquez sur Déposer — elle atterrit au centre du canevas.',
+    uiHelpDragTitle: 'Glisser sur le canevas',
+    uiHelpDragBody: 'Saisissez une carte et glissez-la sur le canevas pour déposer une fiche au curseur.',
+    uiHelpPopulateTitle: 'Remplir les #fields',
+    uiHelpPopulateBody: 'Sélectionnez un frame avec des calques #title, #image, #pricePerNight et déposez — le plugin les remplit sur place.',
+    uiHelpReplaceTitle: 'Déposer dans un frame',
+    uiHelpReplaceBody: 'Sélectionnez un frame et utilisez la bannière. Replace efface les enfants avant de déposer.',
+    uiHelpPaletteTitle: 'Palette de commandes',
+    uiHelpPaletteBody: 'Ouvrez avec ⌘K (Ctrl+K). Changez de mode, plateforme, langue, thème, preset — ou lancez Déposer / Aléatoire / Actualiser / Tout trouver.',
+    uiHelpMultiTitle: 'Sélection multiple',
+    uiHelpMultiBody: 'En mode Liste ou Grille : shift-clic pour une plage, ⌘/Ctrl-clic pour ajouter ou retirer des fiches.',
+    uiPreviewDragHint: 'Glisser sur le canevas',
     uiDrop: 'Déposer',
     uiDropN: 'Déposer {n}',
     uiDropAsList: 'Déposer en liste',

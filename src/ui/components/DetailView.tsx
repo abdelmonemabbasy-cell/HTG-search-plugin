@@ -1,10 +1,94 @@
-import { h } from 'preact';
+import { h, type JSX } from 'preact';
 import type { Offer } from '@shared/types';
 import type { SectionKind } from '@shared/messages';
 import { SECTION_KINDS } from '@shared/messages';
 import type { Locale, StringKey } from '@shared/locales';
 import { t } from '@shared/locales';
 import styles from '../styles.css';
+
+const SECTION_ICONS: Record<SectionKind, JSX.Element> = {
+  gallery: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="14" rx="2" />
+      <path d="m3 14 4-4 5 5" />
+      <circle cx="15" cy="8" r="1.5" />
+    </svg>
+  ),
+  titleHeader: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 7h16" />
+      <path d="M4 12h12" />
+      <path d="M4 17h7" />
+    </svg>
+  ),
+  quickFacts: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="8" height="8" rx="1.5" />
+      <rect x="13" y="3" width="8" height="8" rx="1.5" />
+      <rect x="3" y="13" width="8" height="8" rx="1.5" />
+      <rect x="13" y="13" width="8" height="8" rx="1.5" />
+    </svg>
+  ),
+  reasonsToBook: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m9 12 2 2 4-4" />
+      <circle cx="12" cy="12" r="9" />
+    </svg>
+  ),
+  reviews: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m12 3 2.7 5.5 6 .9-4.4 4.2 1 6-5.3-2.8-5.3 2.8 1-6L3.3 9.4l6-.9z" />
+    </svg>
+  ),
+  amenities: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14" />
+      <path d="M12 5v14" />
+      <circle cx="12" cy="12" r="9" />
+    </svg>
+  ),
+  roomInformation: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 18v-6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v6" />
+      <path d="M3 18h18" />
+      <path d="M7 9V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
+    </svg>
+  ),
+  description: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 8h8" />
+      <path d="M8 12h8" />
+      <path d="M8 16h5" />
+    </svg>
+  ),
+  houseRules: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 4h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+      <path d="M9 12h6" />
+      <path d="M9 16h4" />
+    </svg>
+  ),
+  location: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s7-7.5 7-13a7 7 0 1 0-14 0c0 5.5 7 13 7 13z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  ),
+  priceBreakdown: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v18" />
+      <path d="M16 7H10a2.5 2.5 0 0 0 0 5h4a2.5 2.5 0 0 1 0 5H8" />
+    </svg>
+  ),
+  cancellationPolicy: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 9l6 6" />
+      <path d="M15 9l-6 6" />
+    </svg>
+  ),
+};
 
 interface Props {
   offer: Offer;
@@ -49,6 +133,10 @@ export function DetailView({
         <button class={styles.detailBackBtn} onClick={onBack}>
           ← {t('uiBreadcrumbProperties', locale)}
         </button>
+        <span class={styles.detailBreadcrumbSep}>/</span>
+        <span class={styles.detailBreadcrumbTitle} title={offer.title}>
+          {offer.title}
+        </span>
       </div>
 
       <div
@@ -103,9 +191,14 @@ export function DetailView({
               onDragStart={(e) => hasData && onSectionDragStart?.(kind, e as unknown as DragEvent)}
               title={!hasData ? t('uiTileNotAvailable', locale) : undefined}
             >
-              <div class={styles.sectionTileLabel}>{t(keys.label, locale)}</div>
-              <div class={styles.sectionTileDescription}>
-                {hasData ? t(keys.desc, locale) : t('uiTileNotAvailable', locale)}
+              <span class={styles.sectionTileIcon} aria-hidden="true">
+                {SECTION_ICONS[kind]}
+              </span>
+              <div class={styles.sectionTileText}>
+                <div class={styles.sectionTileLabel}>{t(keys.label, locale)}</div>
+                <div class={styles.sectionTileDescription}>
+                  {hasData ? t(keys.desc, locale) : t('uiTileNotAvailable', locale)}
+                </div>
               </div>
               {isSelected && <span class={styles.sectionTileCheck}>✓</span>}
             </button>

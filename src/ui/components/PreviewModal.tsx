@@ -10,18 +10,25 @@ interface Props {
   onClose: () => void;
   onInsert: () => void;
   onOpenDetail: () => void;
+  onDragStart?: (e: DragEvent) => void;
   locale: Locale;
 }
 
-export function PreviewModal({ offer, onClose, onInsert, onOpenDetail, locale }: Props) {
+export function PreviewModal({ offer, onClose, onInsert, onOpenDetail, onDragStart, locale }: Props) {
   return (
     <div class={styles.modalOverlay} onClick={onClose}>
       <div class={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div
           class={styles.modalImage}
           style={{ backgroundImage: `url(${offer.images[0]?.url})` }}
+          draggable={!!onDragStart}
+          onDragStart={onDragStart}
+          title={onDragStart ? t('uiPreviewDragHint', locale) : undefined}
         >
           <button class={styles.modalClose} onClick={onClose}>×</button>
+          {onDragStart && (
+            <span class={styles.modalDragHint}>{t('uiPreviewDragHint', locale)}</span>
+          )}
         </div>
         <div class={styles.modalBody}>
           <h2 class={styles.modalTitle}>{offer.title}</h2>
