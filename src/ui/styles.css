@@ -584,6 +584,72 @@
   color: var(--htg-text-muted);
 }
 
+/* ---------- Loading skeleton ---------- */
+.tileSkeleton {
+  background: var(--htg-card);
+  border: 1px solid var(--htg-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.tileSkeletonImg {
+  width: 100%;
+  height: 104px;
+  background: var(--htg-surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.tileSkeletonImg::after,
+.tileSkeletonLine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  animation: htgShimmer 1.4s infinite;
+}
+
+:global(html.figma-dark:not([data-theme="light"])) .tileSkeletonImg::after,
+:global(html.figma-dark:not([data-theme="light"])) .tileSkeletonLine::after,
+:global(html[data-theme="dark"]) .tileSkeletonImg::after,
+:global(html[data-theme="dark"]) .tileSkeletonLine::after {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+}
+
+.tileSkeletonBody {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tileSkeletonLine {
+  height: 10px;
+  border-radius: 4px;
+  background: var(--htg-surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.tileSkeletonLineShort {
+  width: 60%;
+}
+
+@keyframes htgShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 /* ---------- Empty state ---------- */
 .empty {
   text-align: center;

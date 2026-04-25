@@ -63,6 +63,7 @@ declare const styles: {
   readonly "htgPaletteIn": string;
   readonly "htgPeekIn": string;
   readonly "htgPulse": string;
+  readonly "htgShimmer": string;
   readonly "htgToastIn": string;
   readonly "iconBtn": string;
   readonly "localeBar": string;
@@ -172,6 +173,11 @@ declare const styles: {
   readonly "tileRating": string;
   readonly "tileRatingStar": string;
   readonly "tileSelected": string;
+  readonly "tileSkeleton": string;
+  readonly "tileSkeletonBody": string;
+  readonly "tileSkeletonImg": string;
+  readonly "tileSkeletonLine": string;
+  readonly "tileSkeletonLineShort": string;
   readonly "tileTitle": string;
   readonly "tileTitleRow": string;
   readonly "toast": string;

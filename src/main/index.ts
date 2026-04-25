@@ -1,6 +1,5 @@
 import { emit, on, showUI } from '@create-figma-plugin/utilities';
 import type { Offer } from '@shared/types';
-import { defaultOffersSource, type OffersSource } from './offers-source';
 import type {
   DropHandler,
   DropPayload,
@@ -20,6 +19,7 @@ import type {
   SectionKind,
   SelectionTargetHandler,
   SelectionTarget,
+  SyncOffersHandler,
   UiSize,
   UiState,
   UndoHandler,
@@ -36,9 +36,10 @@ import {
   populateSelection,
 } from './populate';
 
-// Today this is JsonOffersSource; v2 will swap it for an ApiOffersSource
-// without touching the rest of this file.
-const SOURCE: OffersSource = defaultOffersSource;
+// Catalogue cache. Populated by the UI via SYNC_OFFERS on every
+// successful fetch (initial load + on locale change). Refresh / DROP /
+// native drop look offers up here; the data source itself lives in
+// the UI iframe (see src/ui/offers-source.ts).
 let OFFERS: Offer[] = [];
 const OFFER_BY_ID: Record<string, Offer> = {};
 
@@ -50,24 +51,26 @@ const MIN_SIZE: UiSize = { width: 360, height: 480 };
 const MAX_SIZE: UiSize = { width: 900, height: 1200 };
 
 export default async function () {
-  // Boot order: load offers first so OFFER_BY_ID is populated before
-  // any handler can fire. clientStorage reads happen in parallel.
-  const [loadedOffers, savedState, savedSizeRaw] = await Promise.all([
-    SOURCE.getAll(),
+  // Boot in parallel: only state Figma can hand us before the UI runs.
+  // The catalogue itself is loaded on the UI side and synced back via
+  // SYNC_OFFERS once it arrives.
+  const [savedState, savedSizeRaw] = await Promise.all([
     figma.clientStorage.getAsync(UI_STATE_KEY) as Promise<UiState | undefined>,
     figma.clientStorage.getAsync(UI_SIZE_KEY) as Promise<UiSize | undefined>,
   ]);
-  OFFERS = loadedOffers;
-  for (const o of loadedOffers) OFFER_BY_ID[o.id] = o;
 
   const uiSize = clampSize(savedSizeRaw ?? DEFAULT_SIZE);
 
   const initialData: LoadedPayload = {
-    offers: OFFERS,
     savedState,
     uiSize,
   };
   showUI({ width: uiSize.width, height: uiSize.height }, { ...initialData });
+
+  on<SyncOffersHandler>('SYNC_OFFERS', ({ offers }) => {
+    OFFERS = offers;
+    for (const o of offers) OFFER_BY_ID[o.id] = o;
+  });
 
   on<SaveStateHandler>('SAVE_STATE', async (state) => {
     await figma.clientStorage.setAsync(UI_STATE_KEY, state);

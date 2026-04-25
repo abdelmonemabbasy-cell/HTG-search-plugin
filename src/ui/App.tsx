@@ -21,6 +21,7 @@ import type {
   SelectionTargetHandler,
   SelectionTarget,
   SortKey,
+  SyncOffersHandler,
   Theme,
   UiSize,
   UiState,
@@ -29,7 +30,7 @@ import type {
 import type { Locale } from '@shared/locales';
 import { t } from '@shared/locales';
 import type { Platform } from '@shared/platforms';
-import { localize } from '@shared/localize';
+import { defaultOffersSource, type OffersSource, type SearchQuery } from './offers-source';
 import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
 import { FilterBar, type Filters } from './components/FilterBar';
@@ -107,12 +108,64 @@ export function App(props: LoadedPayload) {
   const [dropTarget, setDropTarget] = useState<SelectionTarget | null>(null);
   const [replaceOnDrop, setReplaceOnDrop] = useState<boolean>(saved.replaceOnDrop ?? false);
 
-  const offers = props.offers;
+  // v0.8: catalogue lives in the UI iframe via OffersSource. The
+  // `offers` state is the result of the most recent source.search()
+  // call — already filtered, sorted, and localized server-side
+  // (in v2) or in-process (today's JsonOffersSource).
+  const [source] = useState<OffersSource>(() => defaultOffersSource);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
   // Apply theme on mount and whenever it changes.
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  // Catalogue fetch. Re-runs on every input that the API would
+  // re-evaluate server-side: locale, search text, filters, sort. With
+  // the JSON impl the work is in-process (cheap); with the v2 API impl
+  // each change is a network round-trip and the loading state shows.
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    const query: SearchQuery = {
+      locale,
+      text: search.trim() || undefined,
+      filters: {
+        propertyType: filters.propertyType,
+        minRating: filters.minRating,
+        priceMax: filters.priceMax,
+        minGuests: filters.minGuests,
+      },
+      sort,
+    };
+    source
+      .search(query)
+      .then((next) => {
+        if (cancelled) return;
+        // Apply favouritesOnly client-side. The server doesn't know
+        // which offers the user has starred locally.
+        const filtered = filters.favouritesOnly
+          ? next.filter((o) => favourites.has(o.id))
+          : next;
+        setOffers(filtered);
+        setLoading(false);
+        // Sync the unfiltered (server-side) list to main so Refresh /
+        // DROP / native drop can resolve any offer by id.
+        emit<SyncOffersHandler>('SYNC_OFFERS', { offers: next, locale });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setLoadError(err instanceof Error ? err.message : String(err));
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [source, locale, search, filters, sort, favourites, reloadTick]);
 
   // Listen for INSERT_RESULT from main → show a toast with optional Undo,
   // and fire a one-shot confetti burst on the very first successful drop
@@ -203,27 +256,16 @@ export function App(props: LoadedPayload) {
     replaceOnDrop,
   ]);
 
-  const localizedOffers = useMemo(
-    () => offers.map((o) => localize(o, locale)),
-    [offers, locale],
-  );
-
-  const visible = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const filtered = localizedOffers.filter((o) => {
-      if (q) {
-        const hay = `${o.title} ${o.location.city} ${o.location.country} ${o.location.neighborhood ?? ''}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      if (filters.propertyType && o.propertyType !== filters.propertyType) return false;
-      if (filters.minRating && (!o.rating || o.rating.average < filters.minRating)) return false;
-      if (filters.priceMax && o.price.perNight > filters.priceMax) return false;
-      if (filters.minGuests && o.capacity.guests < filters.minGuests) return false;
-      if (filters.favouritesOnly && !favourites.has(o.id)) return false;
-      return true;
-    });
-    return sortOffers(filtered, sort);
-  }, [localizedOffers, search, filters, sort, favourites]);
+  // Filtering / sorting / localization moved into OffersSource.search
+  // — `offers` is already the visible list. The local catalogue
+  // (`offers` state) is what the source returned for the current
+  // query. Keep a fast id → offer lookup for previewId / detailOfferId.
+  const visible = offers;
+  const offersById = useMemo(() => {
+    const m = new Map<string, Offer>();
+    for (const o of offers) m.set(o.id, o);
+    return m;
+  }, [offers]);
 
   /**
    * Tile-click handler with shift/cmd multi-select.
@@ -493,12 +535,8 @@ export function App(props: LoadedPayload) {
     return () => window.removeEventListener('keydown', onKey);
   }, [selectedIds, previewId, mode, visible, level, selectedSections, detailOfferId, paletteOpen]);
 
-  const previewOffer = previewId
-    ? localizedOffers.find((o) => o.id === previewId)
-    : null;
-  const detailOffer = detailOfferId
-    ? localizedOffers.find((o) => o.id === detailOfferId)
-    : null;
+  const previewOffer = previewId ? offersById.get(previewId) ?? null : null;
+  const detailOffer = detailOfferId ? offersById.get(detailOfferId) ?? null : null;
   const count = selectedIds.size;
 
   // Plugin's primary CTA reads "Drop" (matching the HomeDrop name);
@@ -783,7 +821,31 @@ export function App(props: LoadedPayload) {
       )}
 
       <div class={styles.scroll}>
-        {visible.length === 0 ? (
+        {loading ? (
+          <div class={styles.grid}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={`skeleton-${i}`} class={styles.tileSkeleton}>
+                <div class={styles.tileSkeletonImg} />
+                <div class={styles.tileSkeletonBody}>
+                  <div class={styles.tileSkeletonLine} />
+                  <div class={`${styles.tileSkeletonLine} ${styles.tileSkeletonLineShort}`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : loadError ? (
+          <div class={styles.empty}>
+            <div class={styles.emptyIcon}>!</div>
+            <div class={styles.emptyTitle}>{t('uiLoadErrorTitle', locale)}</div>
+            <div class={styles.emptySubtitle}>{loadError}</div>
+            <button
+              class={styles.emptyBtn}
+              onClick={() => setReloadTick((n) => n + 1)}
+            >
+              {t('uiLoadErrorRetry', locale)}
+            </button>
+          </div>
+        ) : visible.length === 0 ? (
           <div class={styles.empty}>
             <div class={styles.emptyIcon}>⌕</div>
             <div class={styles.emptyTitle}>{t('uiNoMatchTitle', locale)}</div>
@@ -905,28 +967,3 @@ function sectionHasData(kind: SectionKind, offer: Offer | undefined): boolean {
   }
 }
 
-function sortOffers(offers: Offer[], key: SortKey): Offer[] {
-  const a = [...offers];
-  switch (key) {
-    case 'priceAsc':
-      a.sort((x, y) => x.price.perNight - y.price.perNight);
-      break;
-    case 'priceDesc':
-      a.sort((x, y) => y.price.perNight - x.price.perNight);
-      break;
-    case 'ratingDesc':
-      a.sort((x, y) => (y.rating?.average ?? 0) - (x.rating?.average ?? 0));
-      break;
-    case 'newest':
-      a.sort((x, y) => {
-        const xNew = x.badges.includes('new_listing') ? 1 : 0;
-        const yNew = y.badges.includes('new_listing') ? 1 : 0;
-        return yNew - xNew;
-      });
-      break;
-    case 'default':
-    default:
-      break;
-  }
-  return a;
-}

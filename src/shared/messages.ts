@@ -137,8 +137,13 @@ export interface DropPayload {
   replaceOnDrop?: boolean;
 }
 
+/**
+ * Initial data shipped from main → UI on showUI(). The catalogue itself
+ * is no longer included here — the UI iframe owns the OffersSource and
+ * fetches on mount. Main only ships state Figma already had access to
+ * before the UI booted (saved UiState + saved size).
+ */
 export interface LoadedPayload {
-  offers: Offer[];
   savedState?: UiState;
   uiSize?: UiSize;
 }
@@ -212,6 +217,17 @@ export interface UndoHandler extends EventHandler {
 export interface FindAllHandler extends EventHandler {
   name: 'FIND_ALL';
   handler: () => void;
+}
+
+/**
+ * UI → main: ship the freshly-loaded catalogue so main can satisfy
+ * Refresh requests by id without round-tripping back to the UI. Fires
+ * after every successful `OffersSource.search()` (initial load + on
+ * locale change).
+ */
+export interface SyncOffersHandler extends EventHandler {
+  name: 'SYNC_OFFERS';
+  handler: (payload: { offers: Offer[]; locale: Locale }) => void;
 }
 
 /** Main → UI: a description of what was just inserted (Toast body). */

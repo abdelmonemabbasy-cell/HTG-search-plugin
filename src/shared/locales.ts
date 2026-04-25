@@ -215,7 +215,9 @@ export type StringKey =
   | 'uiDropBannerSubSingle'
   | 'uiDropBannerSubList'
   | 'uiDropBannerSubGrid'
-  | 'uiDropBannerSubPopulate';
+  | 'uiDropBannerSubPopulate'
+  | 'uiLoadErrorTitle'
+  | 'uiLoadErrorRetry';
 
 export const STRINGS: Record<Locale, Record<StringKey, string>> = {
   en: {
@@ -408,6 +410,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiDropBannerSubList: '{n} properties will land here as a list',
     uiDropBannerSubGrid: '{n} properties will land here as a grid',
     uiDropBannerSubPopulate: 'Populate matching #fields with the selected property',
+    uiLoadErrorTitle: "Couldn't load properties",
+    uiLoadErrorRetry: 'Retry',
   },
   de: {
     ratingOutstanding: 'Hervorragend',
@@ -599,6 +603,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiDropBannerSubList: '{n} Unterkünfte landen hier als Liste',
     uiDropBannerSubGrid: '{n} Unterkünfte landen hier als Raster',
     uiDropBannerSubPopulate: 'Passende #-Felder mit der Auswahl füllen',
+    uiLoadErrorTitle: 'Unterkünfte konnten nicht geladen werden',
+    uiLoadErrorRetry: 'Erneut versuchen',
   },
   es: {
     ratingOutstanding: 'Excepcional',
@@ -790,6 +796,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiDropBannerSubList: '{n} alojamientos caerán aquí como lista',
     uiDropBannerSubGrid: '{n} alojamientos caerán aquí como cuadrícula',
     uiDropBannerSubPopulate: 'Rellenar los #campos con la selección',
+    uiLoadErrorTitle: 'No se pudieron cargar los alojamientos',
+    uiLoadErrorRetry: 'Reintentar',
   },
   fr: {
     ratingOutstanding: 'Exceptionnel',
@@ -981,6 +989,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiDropBannerSubList: '{n} logements atterriront ici en liste',
     uiDropBannerSubGrid: '{n} logements atterriront ici en grille',
     uiDropBannerSubPopulate: 'Remplir les champs # avec la sélection',
+    uiLoadErrorTitle: 'Impossible de charger les logements',
+    uiLoadErrorRetry: 'Réessayer',
   },
 };
 
