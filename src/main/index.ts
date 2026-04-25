@@ -228,17 +228,27 @@ export default async function () {
   //   - application/htg-offer-multi → list/grid of cards
   //   - application/htg-section     → a single detail-page section
   // Returning false tells Figma not to insert a default text node.
-  figma.notify('HomeDrop ready (drop handler registered)');
+  // Loud "drop handler registered" notify so the user sees something
+  // visible the instant the plugin opens. If this toast doesn't show
+  // up, main isn't running (or notify is broken) and the rest of the
+  // diagnostics are moot.
+  figma.notify('HOMEDROP MAIN LOADED · drop handler attached', {
+    timeout: 8000,
+    error: true,
+  });
   figma.on('drop', (event) => {
-    // Diagnostic: surface what Figma actually delivered. Some browsers
-    // / Figma versions silently drop custom MIME types from the
-    // iframe; if we land here with only `text/plain` we know the
-    // application/htg-* payload didn't survive the iframe boundary.
+    // Loud "drop fired" notify so we can confirm Figma is actually
+    // dispatching to us. Anything inside the body is gravy after this.
+    figma.notify(`DROP FIRED · ${event.items.length} items`, {
+      timeout: 8000,
+      error: true,
+    });
     if (event.items.length === 0) {
       figma.notify('Drop received no items — drag payload was lost', { error: true });
       return true;
     }
     const types = event.items.map((it) => it.type).join(', ');
+    figma.notify(`Items: ${types}`, { timeout: 8000, error: true });
     for (const item of event.items) {
       if (item.type === 'application/htg-offer') {
         const body = safeParse(item.data) as
