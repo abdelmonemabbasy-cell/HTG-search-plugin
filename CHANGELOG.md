@@ -5,6 +5,52 @@ Dates are in ISO-8601 (YYYY-MM-DD).
 
 ## [Unreleased]
 
+### 0.7.2 — 2026-04-25 — Spec alignment pass
+
+Cleanup pass to bring the v0.7 surface in line with the spec wording
+and to fix the locked card height. No user-facing behaviour
+regressions; mostly renames + one geometry fix + native drop.
+
+- **Renames** (wire names unchanged for back-compat):
+  `ThemeMode` → `Theme`, `Preset` → `UiPreset` (`name` → `label`),
+  `HighlightOfferHandler` → `HighlightHandler`,
+  `InsertResultHandler` → `InsertedHandler` (`InsertResultPayload`
+  → `ToastMessage`, `nodeIds` → `createdNodeIds`),
+  `SelectionTargetInfo` → `SelectionTarget` (payload now
+  `{ target: SelectionTarget | null }`).
+- **`fillIntoTarget` signature**: `(target, child, { replaceContents })`
+  rather than `(target, child, replace)`.
+- **Confetti** moved out of the React tree to a top-level
+  `src/ui/confetti.ts` exporting `runConfetti()`.
+- **`PresetsMenu.tsx`** added — a header dropdown listing every saved
+  preset with apply / delete actions.
+- **Card height fix**: web cards no longer lock at 320 px. The
+  `minHeight` was removed and the actions column now uses
+  `primaryAxisSizingMode = 'AUTO'` with `layoutAlign = 'STRETCH'`,
+  so the card hugs to the content column's natural height while
+  the right pillar still stretches to fill.
+- **Native `figma.on('drop')`** with three MIME types
+  (`application/htg-offer`, `-multi`, `-section`). The UI tile sets
+  the matching MIME data on `dragstart`. The legacy emit-based
+  `DROP` channel stays for the click-CTA path.
+- **Behaviour fixes**:
+  - Cmd / Ctrl-click now additively toggles selection without moving
+    the anchor (plain click still moves the anchor; shift-click still
+    extends).
+  - `LOCALES` flag emojis swapped from regional-indicator pairs to
+    plain text codes (EN / DE / ES / FR) — fixes the "doubled-flag"
+    bug some emoji fonts render.
+  - Platform label "iPhone" → "iOS".
+  - Randomize button moved out of the header and into SortBar.
+  - New Header **Find all** button emits `FIND_ALL`.
+  - Section corner radii on mobile: iOS 16, Android 12 (were both 0).
+  - Primary CTA reads "Drop / Drop N / Drop as list / Drop as grid"
+    matching the plugin name.
+- **Docs**: CLAUDE.md gets a Message channels table and an
+  Interaction model section. ARCHITECTURE.md adds a `figma.on(...)`
+  table. LAYER_NAMING_SPEC.md adds "How populate fires" (4 triggers).
+  SCOPE.md success criteria expanded from 5 to 12 bullets.
+
 ### 0.7.1 — 2026-04-25 — Rebrand to HomeDrop
 
 The plugin is now called **HomeDrop** end-to-end. HomeToGo remains the data

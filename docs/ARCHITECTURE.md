@@ -112,6 +112,16 @@ from it.
    so the UI can show a Toast with an Undo button.
 ```
 
+### Figma events (main thread)
+
+Two `figma.on(...)` listeners drive the plugin's reaction to canvas
+state, alongside the explicit `emit/on` channels:
+
+| Event             | Fired by Figma when…                              | Side-effects                                                                                                         |
+|-------------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| `selectionchange` | Any selection mutation on the current page        | Calls `pushHighlight()` (emits `HIGHLIGHT_OFFER`) and `pushSelectionTarget()` (emits `SELECTION_TARGET`).             |
+| `drop`            | The user releases a drag from the plugin iframe   | Reads `event.items` for the three MIME types (`application/htg-offer`, `-multi`, `-section`) and dispatches the build. Returns `false` so Figma doesn't insert its own text node. |
+
 ### v0.6 / v0.7 message channels
 
 The plugin now has a richer two-way message bus. Every channel is

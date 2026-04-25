@@ -90,6 +90,50 @@ src/
 Main and UI threads communicate via `emit` / `on` from
 `@create-figma-plugin/utilities` (typed wrappers over `postMessage`).
 
+## Message channels
+
+All handler interfaces live in `src/shared/messages.ts`. Wire names
+(in quotes) are stable; TS handler names tracked the v0.7 rename.
+
+| Channel              | Direction | Payload                                | Purpose                                   |
+|----------------------|-----------|----------------------------------------|-------------------------------------------|
+| `'INSERT'`           | UI → main | `InsertCardsPayload \| InsertSectionsPayload` (may include `dropInto: DropInto`) | The main CTA — drop a card / list / grid / section |
+| `'DROP'`             | UI → main | `DropPayload`                          | Tile dragend (legacy emit-based path)     |
+| `'UNDO'`             | UI → main | `{ nodeIds: string[] }`                | Toast Undo button                         |
+| `'FIND_ALL'`         | UI → main | —                                      | Select every HomeDrop-tagged node on page |
+| `'REFRESH'`          | UI → main | —                                      | Re-render selected HomeDrop nodes         |
+| `'RESIZE'`           | UI → main | `UiSize`                               | Live resize while dragging the corner     |
+| `'SAVE_STATE'`       | UI → main | `UiState`                              | Persist UI state (debounced)              |
+| `'SAVE_UI_SIZE'`     | UI → main | `UiSize`                               | Persist final size on resize commit       |
+| `'INSERTED'`         | main → UI | `ToastMessage`                         | Toast body + Undo node ids                |
+| `'HIGHLIGHT_OFFER'`  | main → UI | `{ offerId: string \| null }`          | Pulse the matching tile on canvas select  |
+| `'SELECTION_TARGET'` | main → UI | `{ target: SelectionTarget \| null }`  | Drive the Drop banner                     |
+
+Two `figma.on(...)` events on the main thread:
+
+- `selectionchange` — fires `pushHighlight()` and `pushSelectionTarget()`.
+- `drop` — three MIME types: `application/htg-offer`,
+  `application/htg-offer-multi`, `application/htg-section`. Returning
+  `false` suppresses Figma's default text-node insertion.
+
+## Interaction model — four ways to drop
+
+1. **Click the Drop CTA** (single mode, no selection) → card lands at
+   viewport centre.
+2. **Click the Drop CTA with a #fieldName frame selected** → the
+   plugin populates `#title`, `#image`, etc. instead of creating a
+   new card.
+3. **Drag a tile onto a frame on the canvas** → routed through
+   `figma.on('drop')` → main lands the card inside the dropped-on
+   frame at the cursor's local coordinates.
+4. **Drag a tile onto empty canvas** → same channel, lands on the
+   page at `event.absoluteX / absoluteY`.
+
+The "Drop into 'X' with Replace" banner adds a fifth path on top of
+(2): when the user clicks Drop with a non-`#field` frame selected and
+Replace ON, the target frame's children are cleared first and the
+fresh card becomes its only child.
+
 ## Locale + Platform
 
 Every card and section is rendered in the selected locale
