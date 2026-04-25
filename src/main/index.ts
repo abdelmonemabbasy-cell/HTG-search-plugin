@@ -128,12 +128,12 @@ export default async function () {
   on<RefreshHandler>('REFRESH', async () => {
     const selection = figma.currentPage.selection;
     if (selection.length === 0) {
-      figma.notify('Select one or more HomeDrop cards first.', { error: true });
+      figma.notify('Select one or more HomeDrop cards first');
       return;
     }
     const tagged = collectTaggedFrames(selection);
     if (tagged.length === 0) {
-      figma.notify('No inserted HomeDrop cards in the current selection.', { error: true });
+      figma.notify('No inserted HomeDrop cards in the current selection');
       return;
     }
     let refreshed = 0;
@@ -516,7 +516,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
   const { offerId, sections, locale, platform } = payload;
   const offer = OFFER_BY_ID[offerId];
   if (!offer || sections.length === 0) {
-    figma.notify('Pick at least one section to drop', { error: true });
+    figma.notify('Pick at least one section to drop');
     return;
   }
 
@@ -546,7 +546,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
   container.layoutMode = 'VERTICAL';
   container.primaryAxisSizingMode = 'AUTO';
   container.counterAxisSizingMode = 'AUTO';
-  container.itemSpacing = platform === 'web' ? LAYOUT_GAP : 0;
+  container.itemSpacing = LAYOUT_GAP;
   container.fills = [];
   container.paddingTop = container.paddingBottom = 0;
   container.paddingLeft = container.paddingRight = 0;
