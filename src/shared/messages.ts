@@ -7,7 +7,8 @@ export type InsertMode = 'single' | 'list' | 'grid';
 
 export type SortKey = 'default' | 'priceAsc' | 'priceDesc' | 'ratingDesc' | 'newest';
 
-export type ThemeMode = 'auto' | 'light' | 'dark';
+/** Plugin-managed theme. 'auto' follows Figma's host theme. */
+export type Theme = 'auto' | 'light' | 'dark';
 
 export interface UiSize {
   width: number;
@@ -15,9 +16,10 @@ export interface UiSize {
 }
 
 /** A reusable preset of plugin settings the user can apply with one click. */
-export interface Preset {
+export interface UiPreset {
   id: string;
-  name: string;
+  /** User-supplied display name. */
+  label: string;
   mode: InsertMode;
   platform: Platform;
   locale: Locale;
@@ -70,10 +72,24 @@ export interface UiState {
   locale: Locale;
   platform: Platform;
   filters: UiFilters;
-  theme?: ThemeMode;
+  theme?: Theme;
   favourites?: string[];
-  presets?: Preset[];
+  presets?: UiPreset[];
+  /** Persistent state of the Drop banner's Replace toggle. */
   replaceOnDrop?: boolean;
+}
+
+/**
+ * Drop-into-frame instructions attached to an INSERT or DROP payload
+ * when the user has a frame selected (or has dragged onto one).
+ *
+ *   - `targetId` — Figma node id of the frame to land in.
+ *   - `replaceContents` — when true, fillIntoTarget removes existing
+ *     children of the target before appending the new card.
+ */
+export interface DropInto {
+  targetId: string;
+  replaceContents: boolean;
 }
 
 /** Level-1 insert (property cards). */
@@ -84,6 +100,8 @@ export interface InsertCardsPayload {
   gridColumns: number;
   locale: Locale;
   platform: Platform;
+  /** Optional drop-into-frame override; set by DropTargetBanner. */
+  dropInto?: DropInto;
 }
 
 /** Level-2 insert (detail-page sections for a single offer). */
@@ -93,26 +111,29 @@ export interface InsertSectionsPayload {
   sections: SectionKind[];
   locale: Locale;
   platform: Platform;
+  dropInto?: DropInto;
 }
 
 export type InsertPayload = InsertCardsPayload | InsertSectionsPayload;
 
 /**
- * Drop-onto-canvas payload (UI → main). Triggered by the native drag from
- * a tile. The UI sends absolute viewport pixel coords; main converts those
- * to figma viewport coords via `figma.viewport.center / zoom` math.
+ * Drop-onto-canvas payload (UI → main). Triggered by the native drag
+ * from a tile. The UI sends absolute viewport pixel coords; main
+ * converts those to figma viewport coords via figma.viewport math
+ * (or, when available, uses canvasX / canvasY straight from
+ * figma.on('drop') event data).
  */
 export interface DropPayload {
   offerId: string;
   /** UI iframe pixel coords relative to the viewport's top-left. */
   clientX: number;
   clientY: number;
-  /** Figma plugin event-data drop coords (already in canvas space). */
+  /** Drop coords already in canvas space (set by figma.on('drop')). */
   canvasX?: number;
   canvasY?: number;
   locale: Locale;
   platform: Platform;
-  /** When true, fillIntoTarget() clears children of the target frame. */
+  /** Mirrors DropInto.replaceContents when present. */
   replaceOnDrop?: boolean;
 }
 
@@ -121,6 +142,34 @@ export interface LoadedPayload {
   savedState?: UiState;
   uiSize?: UiSize;
 }
+
+/**
+ * Surfaced by main → UI as the body of an INSERTED message. The UI
+ * shows it in a Toast and, when `createdNodeIds` is non-empty, wires
+ * the Undo button to UNDO with those ids.
+ */
+export interface ToastMessage {
+  /** Top-level node ids the Undo handler will remove. */
+  createdNodeIds: string[];
+  /** Short user-facing label, e.g. "Dropped 3 properties as a list". */
+  label: string;
+  /** Verb hint for analytics + UI styling. */
+  kind: 'inserted' | 'populated' | 'replaced' | 'dropped';
+}
+
+/** Selection target surfaced by main on every selectionchange event. */
+export interface SelectionTarget {
+  /** Figma node id (for analytics/debug only). */
+  id: string;
+  /** Best human-readable label for the banner. */
+  name: string;
+  /** True when the frame contains at least one #fieldName layer. */
+  hasFieldNames: boolean;
+}
+
+// =============================================================================
+// Handlers
+// =============================================================================
 
 export interface InsertHandler extends EventHandler {
   name: 'INSERT';
@@ -159,33 +208,20 @@ export interface UndoHandler extends EventHandler {
   handler: (payload: { nodeIds: string[] }) => void;
 }
 
-/**
- * Main → UI: a description of what was just inserted, so the UI can
- * show a Toast with an Undo button. `nodeIds` are the top-level frames
- * the Undo handler will remove.
- */
-export interface InsertResultPayload {
-  /** Top-level node ids that should be removed when Undo is clicked. */
-  nodeIds: string[];
-  /** Short label, e.g. "Inserted 3 properties as a list". */
-  label: string;
-  /** Verb hint: 'inserted' | 'populated' | 'replaced' | 'dropped'. */
-  kind: 'inserted' | 'populated' | 'replaced' | 'dropped';
-}
-
-export interface InsertResultHandler extends EventHandler {
-  name: 'INSERT_RESULT';
-  handler: (payload: InsertResultPayload) => void;
-}
-
-/** UI → main: select every HTG-tagged node on the current page. */
+/** UI → main: select every HomeDrop-tagged node on the current page. */
 export interface FindAllHandler extends EventHandler {
   name: 'FIND_ALL';
   handler: () => void;
 }
 
+/** Main → UI: a description of what was just inserted (Toast body). */
+export interface InsertedHandler extends EventHandler {
+  name: 'INSERTED';
+  handler: (payload: ToastMessage) => void;
+}
+
 /** Main → UI: pulse the matching tile (canvas selection echo). */
-export interface HighlightOfferHandler extends EventHandler {
+export interface HighlightHandler extends EventHandler {
   name: 'HIGHLIGHT_OFFER';
   handler: (payload: { offerId: string | null }) => void;
 }
@@ -193,18 +229,11 @@ export interface HighlightOfferHandler extends EventHandler {
 /** Main → UI: surface the selected drop-target frame (or null). */
 export interface SelectionTargetHandler extends EventHandler {
   name: 'SELECTION_TARGET';
-  handler: (payload: SelectionTargetInfo | null) => void;
+  handler: (payload: { target: SelectionTarget | null }) => void;
 }
 
-export interface SelectionTargetInfo {
-  /** Figma node id (for analytics/debug only). */
-  id: string;
-  /** Best human-readable label for the banner. */
-  name: string;
-  /** True when the frame contains at least one #fieldName layer. */
-  hasFieldNames: boolean;
-}
-
-/** Back-compat aliases. */
+// =============================================================================
+// Back-compat aliases (the renamed types kept their wire `name`)
+// =============================================================================
 export type InsertMessage = InsertPayload;
 export type LoadedMessage = LoadedPayload;

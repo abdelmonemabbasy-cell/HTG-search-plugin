@@ -204,7 +204,11 @@ export type StringKey =
   | 'uiDropAsList'
   | 'uiDropNAsList'
   | 'uiDropAsGrid'
-  | 'uiDropNAsGrid';
+  | 'uiDropNAsGrid'
+  | 'uiPresetsTooltip'
+  | 'uiPresetsEmpty'
+  | 'uiPresetsSaveCurrent'
+  | 'uiPresetDelete';
 
 export const STRINGS: Record<Locale, Record<StringKey, string>> = {
   en: {
@@ -386,6 +390,10 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiDropNAsList: 'Drop {n} as list',
     uiDropAsGrid: 'Drop as grid',
     uiDropNAsGrid: 'Drop {n} as grid',
+    uiPresetsTooltip: 'Presets',
+    uiPresetsEmpty: 'No presets yet.',
+    uiPresetsSaveCurrent: 'Save current settings…',
+    uiPresetDelete: 'Delete preset',
   },
   de: {
     ratingOutstanding: 'Hervorragend',
@@ -566,6 +574,10 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiDropNAsList: '{n} als Liste ablegen',
     uiDropAsGrid: 'Als Raster ablegen',
     uiDropNAsGrid: '{n} als Raster ablegen',
+    uiPresetsTooltip: 'Voreinstellungen',
+    uiPresetsEmpty: 'Noch keine Voreinstellungen.',
+    uiPresetsSaveCurrent: 'Aktuelle Einstellungen speichern…',
+    uiPresetDelete: 'Voreinstellung löschen',
   },
   es: {
     ratingOutstanding: 'Excepcional',
@@ -746,6 +758,10 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiDropNAsList: 'Soltar {n} como lista',
     uiDropAsGrid: 'Soltar como cuadrícula',
     uiDropNAsGrid: 'Soltar {n} como cuadrícula',
+    uiPresetsTooltip: 'Presets',
+    uiPresetsEmpty: 'Aún no hay presets.',
+    uiPresetsSaveCurrent: 'Guardar ajustes actuales…',
+    uiPresetDelete: 'Eliminar preset',
   },
   fr: {
     ratingOutstanding: 'Exceptionnel',
@@ -926,6 +942,10 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiDropNAsList: 'Déposer {n} en liste',
     uiDropAsGrid: 'Déposer en grille',
     uiDropNAsGrid: 'Déposer {n} en grille',
+    uiPresetsTooltip: 'Préréglages',
+    uiPresetsEmpty: 'Aucun préréglage pour le moment.',
+    uiPresetsSaveCurrent: 'Enregistrer les réglages actuels…',
+    uiPresetDelete: 'Supprimer le préréglage',
   },
 };
 

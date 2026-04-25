@@ -6,22 +6,22 @@ import type {
   DropHandler,
   DropPayload,
   FindAllHandler,
-  HighlightOfferHandler,
+  HighlightHandler,
   InsertHandler,
   InsertMode,
-  InsertResultHandler,
-  InsertResultPayload,
+  InsertedHandler,
+  ToastMessage,
   LoadedPayload,
-  Preset,
+  UiPreset,
   RefreshHandler,
   ResizeHandler,
   SaveStateHandler,
   SaveUiSizeHandler,
   SectionKind,
   SelectionTargetHandler,
-  SelectionTargetInfo,
+  SelectionTarget,
   SortKey,
-  ThemeMode,
+  Theme,
   UiSize,
   UiState,
   UndoHandler,
@@ -43,7 +43,7 @@ import { HoverPeek } from './components/HoverPeek';
 import { NumberTicker } from './components/NumberTicker';
 import { Toast } from './components/Toast';
 import { CommandPalette, type PaletteCommand } from './components/CommandPalette';
-import { Confetti } from './components/Confetti';
+import { runConfetti } from './confetti';
 import { DropTargetBanner } from './components/DropTargetBanner';
 import { attachDragImage } from './dragImage';
 import { applyTheme } from './theme';
@@ -80,7 +80,7 @@ export function App(props: LoadedPayload) {
   const [locale, setLocale] = useState<Locale>(saved.locale);
   const [platform, setPlatform] = useState<Platform>(saved.platform);
   const [filters, setFilters] = useState<Filters>(saved.filters);
-  const [theme, setTheme] = useState<ThemeMode>(saved.theme ?? 'auto');
+  const [theme, setTheme] = useState<Theme>(saved.theme ?? 'auto');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [uiSize, setUiSize] = useState<UiSize>(props.uiSize ?? DEFAULT_SIZE);
@@ -92,20 +92,19 @@ export function App(props: LoadedPayload) {
   const hoverTimerRef = useRef<number | null>(null);
 
   // v0.7 chunk 2: toast + palette + presets + confetti
-  const [presets, setPresets] = useState<Preset[]>(saved.presets ?? []);
+  const [presets, setPresets] = useState<UiPreset[]>(saved.presets ?? []);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     nodeIds: string[];
     seq: number;
   } | null>(null);
-  const [confettiTrigger, setConfettiTrigger] = useState(0);
   const firstDropFiredRef = useRef(false);
 
   // v0.7 chunk 3: canvas → UI awareness
   const [pulseId, setPulseId] = useState<string | null>(null);
   const pulseTimerRef = useRef<number | null>(null);
-  const [dropTarget, setDropTarget] = useState<SelectionTargetInfo | null>(null);
+  const [dropTarget, setDropTarget] = useState<SelectionTarget | null>(null);
   const [replaceOnDrop, setReplaceOnDrop] = useState<boolean>(saved.replaceOnDrop ?? false);
 
   const offers = props.offers;
@@ -119,15 +118,15 @@ export function App(props: LoadedPayload) {
   // and fire a one-shot confetti burst on the very first successful drop
   // of the current session.
   useEffect(() => {
-    const off = on<InsertResultHandler>('INSERT_RESULT', (payload: InsertResultPayload) => {
+    const off = on<InsertedHandler>('INSERTED', (payload: ToastMessage) => {
       setToast({
         message: payload.label,
-        nodeIds: payload.nodeIds,
+        nodeIds: payload.createdNodeIds,
         seq: Date.now(),
       });
       if (!firstDropFiredRef.current && payload.kind !== 'populated') {
         firstDropFiredRef.current = true;
-        setConfettiTrigger((t) => t + 1);
+        runConfetti();
       }
     });
     return () => off();
@@ -138,7 +137,7 @@ export function App(props: LoadedPayload) {
   // designer can see which property the canvas selection refers to.
   // We also scroll the tile into view if it isn't already.
   useEffect(() => {
-    const off = on<HighlightOfferHandler>('HIGHLIGHT_OFFER', ({ offerId }) => {
+    const off = on<HighlightHandler>('HIGHLIGHT_OFFER', ({ offerId }) => {
       if (!offerId) {
         setPulseId(null);
         return;
@@ -165,7 +164,7 @@ export function App(props: LoadedPayload) {
 
   // Drop target info — drives the "Drop into 'X'" banner.
   useEffect(() => {
-    const off = on<SelectionTargetHandler>('SELECTION_TARGET', (target) => {
+    const off = on<SelectionTargetHandler>('SELECTION_TARGET', ({ target }) => {
       setDropTarget(target);
     });
     return () => off();
@@ -501,9 +500,9 @@ export function App(props: LoadedPayload) {
   const savePreset = () => {
     const name = window.prompt(t('uiPresetNamePrompt', locale));
     if (!name || !name.trim()) return;
-    const preset: Preset = {
+    const preset: UiPreset = {
       id: `preset-${Date.now()}`,
-      name: name.trim(),
+      label: name.trim(),
       mode,
       platform,
       locale,
@@ -512,13 +511,13 @@ export function App(props: LoadedPayload) {
     };
     setPresets((p) => [...p, preset]);
     setToast({
-      message: t('uiPresetSaved', locale, { name: preset.name }),
+      message: t('uiPresetSaved', locale, { name: preset.label }),
       nodeIds: [],
       seq: Date.now(),
     });
   };
 
-  const applyPreset = (p: Preset) => {
+  const applyPreset = (p: UiPreset) => {
     setMode(p.mode);
     setPlatform(p.platform);
     setLocale(p.locale);
@@ -584,7 +583,7 @@ export function App(props: LoadedPayload) {
         run: () => setLocale(l),
       });
     }
-    const themes: ThemeMode[] = ['auto', 'light', 'dark'];
+    const themes: Theme[] = ['auto', 'light', 'dark'];
     for (const th of themes) {
       cmds.push({
         id: `theme-${th}`,
@@ -597,12 +596,15 @@ export function App(props: LoadedPayload) {
     for (const p of presets) {
       cmds.push({
         id: `preset-${p.id}`,
-        label: t('uiPaletteApplyPreset', locale, { value: p.name }),
+        label: t('uiPaletteApplyPreset', locale, { value: p.label }),
         run: () => applyPreset(p),
       });
     }
     return cmds;
   }, [locale, presets, mode, platform, gridColumns, sort, theme, visible]);
+
+  const deletePreset = (id: string) =>
+    setPresets((all) => all.filter((p) => p.id !== id));
 
   const headerProps = {
     mode,
@@ -611,6 +613,10 @@ export function App(props: LoadedPayload) {
     onFindAll: () => emit<FindAllHandler>('FIND_ALL'),
     theme,
     onThemeChange: setTheme,
+    presets,
+    onApplyPreset: applyPreset,
+    onSavePreset: savePreset,
+    onDeletePreset: deletePreset,
     locale,
   };
 
@@ -638,7 +644,6 @@ export function App(props: LoadedPayload) {
         onClose={() => setPaletteOpen(false)}
         locale={locale}
       />
-      <Confetti trigger={confettiTrigger} />
     </Fragment>
   );
 
@@ -849,7 +854,7 @@ function modeLabelKey(m: InsertMode): 'uiModeSingle' | 'uiModeList' | 'uiModeGri
   return 'uiModeGrid';
 }
 
-function themeLabelKey(th: ThemeMode): 'uiThemeAuto' | 'uiThemeLight' | 'uiThemeDark' {
+function themeLabelKey(th: Theme): 'uiThemeAuto' | 'uiThemeLight' | 'uiThemeDark' {
   if (th === 'light') return 'uiThemeLight';
   if (th === 'dark') return 'uiThemeDark';
   return 'uiThemeAuto';

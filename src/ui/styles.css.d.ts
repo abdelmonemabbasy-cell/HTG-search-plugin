@@ -115,6 +115,15 @@ declare const styles: {
   readonly "pillBtn": string;
   readonly "pillBtnActive": string;
   readonly "pillGroup": string;
+  readonly "presetsDropdown": string;
+  readonly "presetsEmpty": string;
+  readonly "presetsMenu": string;
+  readonly "presetsRow": string;
+  readonly "presetsRowApply": string;
+  readonly "presetsRowDelete": string;
+  readonly "presetsRowLabel": string;
+  readonly "presetsRowMeta": string;
+  readonly "presetsSaveBtn": string;
   readonly "refreshBtn": string;
   readonly "resizeHandle": string;
   readonly "root": string;

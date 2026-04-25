@@ -1,4 +1,4 @@
-import type { ThemeMode } from '@shared/messages';
+import type { Theme } from '@shared/messages';
 
 /**
  * Apply a theme override to the iframe's <html> element. We never strip
@@ -9,7 +9,7 @@ import type { ThemeMode } from '@shared/messages';
  *   - 'light'  → force light (data-theme="light", overrides figma-dark)
  *   - 'dark'   → force dark  (data-theme="dark")
  */
-export function applyTheme(theme: ThemeMode): void {
+export function applyTheme(theme: Theme): void {
   const root = document.documentElement;
   if (theme === 'auto') {
     root.removeAttribute('data-theme');
@@ -19,7 +19,7 @@ export function applyTheme(theme: ThemeMode): void {
 }
 
 /** Resolved boolean: is the iframe currently rendering as dark? */
-export function isDark(theme: ThemeMode): boolean {
+export function isDark(theme: Theme): boolean {
   if (theme === 'dark') return true;
   if (theme === 'light') return false;
   const cl = document.documentElement.classList;

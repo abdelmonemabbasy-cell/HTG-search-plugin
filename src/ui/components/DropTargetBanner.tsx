@@ -1,11 +1,11 @@
 import { h } from 'preact';
-import type { SelectionTargetInfo } from '@shared/messages';
+import type { SelectionTarget } from '@shared/messages';
 import type { Locale } from '@shared/locales';
 import { t } from '@shared/locales';
 import styles from '../styles.css';
 
 interface Props {
-  target: SelectionTargetInfo;
+  target: SelectionTarget;
   replace: boolean;
   onReplaceChange: (next: boolean) => void;
   locale: Locale;

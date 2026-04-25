@@ -5,12 +5,12 @@ import type {
   DropHandler,
   DropPayload,
   FindAllHandler,
-  HighlightOfferHandler,
+  HighlightHandler,
   InsertCardsPayload,
   InsertHandler,
   InsertMode,
   InsertPayload,
-  InsertResultHandler,
+  InsertedHandler,
   InsertSectionsPayload,
   LoadedPayload,
   RefreshHandler,
@@ -19,7 +19,7 @@ import type {
   SaveUiSizeHandler,
   SectionKind,
   SelectionTargetHandler,
-  SelectionTargetInfo,
+  SelectionTarget,
   UiSize,
   UiState,
   UndoHandler,
@@ -196,28 +196,28 @@ function pushHighlight(): void {
       }
     }
   }
-  emit<HighlightOfferHandler>('HIGHLIGHT_OFFER', { offerId });
+  emit<HighlightHandler>('HIGHLIGHT_OFFER', { offerId });
 }
 
 function pushSelectionTarget(): void {
   const sel = figma.currentPage.selection;
   const target = firstTargetInSelection(sel);
   if (!target) {
-    emit<SelectionTargetHandler>('SELECTION_TARGET', null);
+    emit<SelectionTargetHandler>('SELECTION_TARGET', { target: null });
     return;
   }
-  // Skip nodes that are themselves an inserted HTG card — they aren't
-  // useful drop targets, only refresh targets.
+  // Skip nodes that are themselves an inserted HomeDrop card — they
+  // aren't useful drop targets, only refresh targets.
   if (target.getPluginData('htgOfferId')) {
-    emit<SelectionTargetHandler>('SELECTION_TARGET', null);
+    emit<SelectionTargetHandler>('SELECTION_TARGET', { target: null });
     return;
   }
-  const info: SelectionTargetInfo = {
+  const info: SelectionTarget = {
     id: target.id,
     name: target.name || 'Frame',
     hasFieldNames: hasFieldNames(target),
   };
-  emit<SelectionTargetHandler>('SELECTION_TARGET', info);
+  emit<SelectionTargetHandler>('SELECTION_TARGET', { target: info });
 }
 
 function collectTaggedFrames(selection: readonly SceneNode[]): FrameNode[] {
@@ -263,8 +263,8 @@ async function insertLevel1(payload: InsertCardsPayload): Promise<void> {
       ? `Inserted "${offers[0].title}" (${platform}, ${locale.toUpperCase()})`
       : `Inserted ${offers.length} properties as a ${verb}`;
   figma.notify(label);
-  emit<InsertResultHandler>('INSERT_RESULT', {
-    nodeIds: created.map((n) => n.id),
+  emit<InsertedHandler>('INSERTED', {
+    createdNodeIds: created.map((n) => n.id),
     label,
     kind: 'inserted',
   });
@@ -352,8 +352,8 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
     figma.viewport.scrollAndZoomIntoView([node]);
     const label = `Inserted "${sections[0]}" for "${offer.title}"`;
     figma.notify(label);
-    emit<InsertResultHandler>('INSERT_RESULT', {
-      nodeIds: [node.id],
+    emit<InsertedHandler>('INSERTED', {
+      createdNodeIds: [node.id],
       label,
       kind: 'inserted',
     });
@@ -387,8 +387,8 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
   figma.viewport.scrollAndZoomIntoView([container]);
   const label = `Inserted ${sections.length} detail sections for "${offer.title}"`;
   figma.notify(label);
-  emit<InsertResultHandler>('INSERT_RESULT', {
-    nodeIds: [container.id],
+  emit<InsertedHandler>('INSERTED', {
+    createdNodeIds: [container.id],
     label,
     kind: 'inserted',
   });
@@ -428,8 +428,8 @@ async function handleDrop(payload: DropPayload): Promise<void> {
     if (filled > 0) {
       const label = `Populated ${filled} layer${filled === 1 ? '' : 's'} in "${target.name}".`;
       figma.notify(label);
-      emit<InsertResultHandler>('INSERT_RESULT', {
-        nodeIds: [],
+      emit<InsertedHandler>('INSERTED', {
+        createdNodeIds: [],
         label,
         kind: 'populated',
       });
@@ -440,12 +440,12 @@ async function handleDrop(payload: DropPayload): Promise<void> {
 
   if ((mode === 'fill' || mode === 'populate') && target) {
     const card = await buildCard(offer, locale, platform);
-    fillIntoTarget(target, card, !!replaceOnDrop);
+    fillIntoTarget(target, card, { replaceContents: !!replaceOnDrop });
     figma.currentPage.selection = [card];
     const label = `${replaceOnDrop ? 'Replaced into' : 'Dropped into'} "${target.name}".`;
     figma.notify(label);
-    emit<InsertResultHandler>('INSERT_RESULT', {
-      nodeIds: [card.id],
+    emit<InsertedHandler>('INSERTED', {
+      createdNodeIds: [card.id],
       label,
       kind: replaceOnDrop ? 'replaced' : 'dropped',
     });
@@ -465,8 +465,8 @@ async function handleDrop(payload: DropPayload): Promise<void> {
   figma.currentPage.selection = [card];
   const label = `Dropped "${offer.title}" on the canvas.`;
   figma.notify(label);
-  emit<InsertResultHandler>('INSERT_RESULT', {
-    nodeIds: [card.id],
+  emit<InsertedHandler>('INSERTED', {
+    createdNodeIds: [card.id],
     label,
     kind: 'dropped',
   });
