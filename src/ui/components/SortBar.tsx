@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import type { SortKey, InsertMode } from '@shared/messages';
+import type { SortKey, MultiLayout } from '@shared/messages';
 import type { Locale, StringKey } from '@shared/locales';
 import { t } from '@shared/locales';
 import { NumberTicker } from './NumberTicker';
@@ -10,7 +10,7 @@ interface Props {
   total: number;
   sort: SortKey;
   onSortChange: (sort: SortKey) => void;
-  mode: InsertMode;
+  multiLayout: MultiLayout;
   gridColumns: number;
   onGridColumnsChange: (n: number) => void;
   onRandomize: () => void;
@@ -30,7 +30,7 @@ export function SortBar({
   total,
   sort,
   onSortChange,
-  mode,
+  multiLayout,
   gridColumns,
   onGridColumnsChange,
   onRandomize,
@@ -66,7 +66,7 @@ export function SortBar({
             <circle cx="12" cy="12" r="1" fill="currentColor" />
           </svg>
         </button>
-        {mode === 'grid' && (
+        {multiLayout === 'grid' && (
           <div class={styles.colStepper}>
             {[2, 3, 4].map((n) => (
               <button

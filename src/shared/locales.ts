@@ -90,9 +90,6 @@ export type StringKey =
   | 'uiMarket'
   | 'uiSurface'
   | 'uiRefresh'
-  | 'uiModeSingle'
-  | 'uiModeList'
-  | 'uiModeGrid'
   | 'uiSearchPlaceholder'
   | 'uiFilterAll'
   | 'uiFilterPriceMax'
@@ -107,15 +104,11 @@ export type StringKey =
   | 'uiNOfTotal'
   | 'uiSelectAProperty'
   | 'uiHintClickSingle'
-  | 'uiHintPickList'
-  | 'uiHintPickGrid'
   | 'uiNSelected'
   | 'uiEnterToInsert'
   | 'uiSelectAll'
   | 'uiSelectAllN'
   | 'uiClear'
-  | 'uiPickAsList'
-  | 'uiPickAsGrid'
   | 'uiNoMatchTitle'
   | 'uiNoMatchHint'
   | 'uiClearAllFilters'
@@ -174,12 +167,15 @@ export type StringKey =
   | 'uiPaletteRandom'
   | 'uiPaletteRefresh'
   | 'uiPaletteFindAll'
-  | 'uiPaletteSetMode'
   | 'uiPaletteSetPlatform'
   | 'uiPaletteSetLocale'
   | 'uiPaletteSetTheme'
   | 'uiPaletteSavePreset'
   | 'uiPaletteApplyPreset'
+  | 'uiPaletteSetLayout'
+  | 'uiLayoutList'
+  | 'uiLayoutGrid'
+  | 'uiCtaPickLayout'
   | 'uiPaletteDrop'
   | 'uiDropBanner'
   | 'uiDropBannerWithFields'
@@ -292,9 +288,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiMarket: 'Market',
     uiSurface: 'Surface',
     uiRefresh: 'Refresh selected cards (re-render against current data)',
-    uiModeSingle: 'Single',
-    uiModeList: 'List',
-    uiModeGrid: 'Grid',
     uiSearchPlaceholder: 'Where to? City or country',
     uiFilterAll: 'All',
     uiFilterPriceMax: 'Under {amount}',
@@ -309,15 +302,11 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiNOfTotal: '{n} of {total}',
     uiSelectAProperty: 'Select a property',
     uiHintClickSingle: 'Click a property to select',
-    uiHintPickList: 'Pick multiple to stack as a list',
-    uiHintPickGrid: 'Pick multiple to arrange as a grid',
     uiNSelected: '{n} selected',
     uiEnterToInsert: '{n} selected · ⏎ to drop',
     uiSelectAll: 'Select all',
     uiSelectAllN: 'Select all {n}',
     uiClear: 'Clear',
-    uiPickAsList: 'Pick properties to drop as list',
-    uiPickAsGrid: 'Pick properties to drop as grid',
     uiNoMatchTitle: 'No properties match',
     uiNoMatchHint: 'Try widening the filters or searching for a different city.',
     uiClearAllFilters: 'Clear all filters',
@@ -375,12 +364,15 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPaletteRandom: 'Random property',
     uiPaletteRefresh: 'Refresh selected cards',
     uiPaletteFindAll: 'Find all HomeDrop cards on this page',
-    uiPaletteSetMode: 'Mode: {value}',
     uiPaletteSetPlatform: 'Surface: {value}',
     uiPaletteSetLocale: 'Market: {value}',
     uiPaletteSetTheme: 'Theme: {value}',
     uiPaletteSavePreset: 'Save current settings as preset…',
     uiPaletteApplyPreset: 'Apply preset · {value}',
+    uiPaletteSetLayout: 'Multi layout: {value}',
+    uiLayoutList: 'List',
+    uiLayoutGrid: 'Grid',
+    uiCtaPickLayout: 'Pick layout',
     uiPaletteDrop: 'Drop a property card on the canvas',
     uiDropBanner: 'Drop into "{name}"',
     uiDropBannerWithFields: 'Drop into "{name}" — {n} #fields detected',
@@ -492,9 +484,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiMarket: 'Markt',
     uiSurface: 'Oberfläche',
     uiRefresh: 'Ausgewählte Karten aktualisieren (mit aktuellen Daten neu rendern)',
-    uiModeSingle: 'Einzeln',
-    uiModeList: 'Liste',
-    uiModeGrid: 'Raster',
     uiSearchPlaceholder: 'Wohin? Stadt oder Land',
     uiFilterAll: 'Alle',
     uiFilterPriceMax: 'Unter {amount}',
@@ -509,15 +498,11 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiNOfTotal: '{n} von {total}',
     uiSelectAProperty: 'Unterkunft auswählen',
     uiHintClickSingle: 'Unterkunft anklicken, um auszuwählen',
-    uiHintPickList: 'Mehrere wählen, um als Liste zu stapeln',
-    uiHintPickGrid: 'Mehrere wählen, um als Raster anzuordnen',
     uiNSelected: '{n} ausgewählt',
     uiEnterToInsert: '{n} ausgewählt · ⏎ zum Ablegen',
     uiSelectAll: 'Alle auswählen',
     uiSelectAllN: 'Alle {n} auswählen',
     uiClear: 'Leeren',
-    uiPickAsList: 'Unterkünfte wählen, um als Liste abzulegen',
-    uiPickAsGrid: 'Unterkünfte wählen, um als Raster abzulegen',
     uiNoMatchTitle: 'Keine passenden Unterkünfte',
     uiNoMatchHint: 'Filter erweitern oder eine andere Stadt suchen.',
     uiClearAllFilters: 'Alle Filter löschen',
@@ -575,12 +560,15 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPaletteRandom: 'Zufällige Unterkunft',
     uiPaletteRefresh: 'Ausgewählte Karten aktualisieren',
     uiPaletteFindAll: 'Alle HomeDrop-Karten auf dieser Seite finden',
-    uiPaletteSetMode: 'Modus: {value}',
     uiPaletteSetPlatform: 'Oberfläche: {value}',
     uiPaletteSetLocale: 'Markt: {value}',
     uiPaletteSetTheme: 'Design: {value}',
     uiPaletteSavePreset: 'Aktuelle Einstellungen als Preset speichern…',
     uiPaletteApplyPreset: 'Preset anwenden · {value}',
+    uiPaletteSetLayout: 'Mehrfach-Layout: {value}',
+    uiLayoutList: 'Liste',
+    uiLayoutGrid: 'Raster',
+    uiCtaPickLayout: 'Layout wählen',
     uiPaletteDrop: 'Karte auf dem Canvas ablegen',
     uiDropBanner: 'In "{name}" ablegen',
     uiDropBannerWithFields: 'In "{name}" ablegen — {n} #-Felder erkannt',
@@ -692,9 +680,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiMarket: 'Mercado',
     uiSurface: 'Superficie',
     uiRefresh: 'Actualizar las tarjetas seleccionadas (volver a renderizar con los datos actuales)',
-    uiModeSingle: 'Una',
-    uiModeList: 'Lista',
-    uiModeGrid: 'Cuadrícula',
     uiSearchPlaceholder: '¿Adónde? Ciudad o país',
     uiFilterAll: 'Todos',
     uiFilterPriceMax: 'Menos de {amount}',
@@ -709,15 +694,11 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiNOfTotal: '{n} de {total}',
     uiSelectAProperty: 'Selecciona un alojamiento',
     uiHintClickSingle: 'Haz clic en un alojamiento para seleccionarlo',
-    uiHintPickList: 'Elige varios para apilarlos como lista',
-    uiHintPickGrid: 'Elige varios para organizarlos en cuadrícula',
     uiNSelected: '{n} seleccionados',
     uiEnterToInsert: '{n} seleccionados · ⏎ para soltar',
     uiSelectAll: 'Seleccionar todos',
     uiSelectAllN: 'Seleccionar los {n}',
     uiClear: 'Limpiar',
-    uiPickAsList: 'Elige alojamientos para soltar como lista',
-    uiPickAsGrid: 'Elige alojamientos para soltar como cuadrícula',
     uiNoMatchTitle: 'No hay coincidencias',
     uiNoMatchHint: 'Prueba a ampliar los filtros o buscar otra ciudad.',
     uiClearAllFilters: 'Limpiar todos los filtros',
@@ -775,12 +756,15 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPaletteRandom: 'Alojamiento aleatorio',
     uiPaletteRefresh: 'Actualizar tarjetas seleccionadas',
     uiPaletteFindAll: 'Buscar todas las tarjetas HomeDrop en esta página',
-    uiPaletteSetMode: 'Modo: {value}',
     uiPaletteSetPlatform: 'Superficie: {value}',
     uiPaletteSetLocale: 'Mercado: {value}',
     uiPaletteSetTheme: 'Tema: {value}',
     uiPaletteSavePreset: 'Guardar ajustes actuales como preset…',
     uiPaletteApplyPreset: 'Aplicar preset · {value}',
+    uiPaletteSetLayout: 'Diseño múltiple: {value}',
+    uiLayoutList: 'Lista',
+    uiLayoutGrid: 'Cuadrícula',
+    uiCtaPickLayout: 'Elegir diseño',
     uiPaletteDrop: 'Soltar una tarjeta en el lienzo',
     uiDropBanner: 'Soltar en "{name}"',
     uiDropBannerWithFields: 'Soltar en "{name}" — {n} #campos detectados',
@@ -892,9 +876,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiMarket: 'Marché',
     uiSurface: 'Surface',
     uiRefresh: 'Actualiser les fiches sélectionnées (re-rendre avec les données actuelles)',
-    uiModeSingle: 'Unique',
-    uiModeList: 'Liste',
-    uiModeGrid: 'Grille',
     uiSearchPlaceholder: 'Où ? Ville ou pays',
     uiFilterAll: 'Tous',
     uiFilterPriceMax: 'Moins de {amount}',
@@ -909,15 +890,11 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiNOfTotal: '{n} sur {total}',
     uiSelectAProperty: 'Sélectionnez un logement',
     uiHintClickSingle: 'Cliquez sur un logement pour le sélectionner',
-    uiHintPickList: 'Choisissez-en plusieurs pour une liste',
-    uiHintPickGrid: 'Choisissez-en plusieurs pour une grille',
     uiNSelected: '{n} sélectionnés',
     uiEnterToInsert: '{n} sélectionnés · ⏎ pour déposer',
     uiSelectAll: 'Tout sélectionner',
     uiSelectAllN: 'Tout sélectionner ({n})',
     uiClear: 'Effacer',
-    uiPickAsList: 'Choisissez des logements à déposer en liste',
-    uiPickAsGrid: 'Choisissez des logements à déposer en grille',
     uiNoMatchTitle: 'Aucun logement ne correspond',
     uiNoMatchHint: 'Élargissez les filtres ou cherchez une autre ville.',
     uiClearAllFilters: 'Effacer tous les filtres',
@@ -975,12 +952,15 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPaletteRandom: 'Logement aléatoire',
     uiPaletteRefresh: 'Actualiser les fiches sélectionnées',
     uiPaletteFindAll: 'Trouver toutes les fiches HomeDrop sur cette page',
-    uiPaletteSetMode: 'Mode : {value}',
     uiPaletteSetPlatform: 'Surface : {value}',
     uiPaletteSetLocale: 'Marché : {value}',
     uiPaletteSetTheme: 'Thème : {value}',
     uiPaletteSavePreset: 'Enregistrer les réglages actuels comme préréglage…',
     uiPaletteApplyPreset: 'Appliquer le préréglage · {value}',
+    uiPaletteSetLayout: 'Mise en page multi : {value}',
+    uiLayoutList: 'Liste',
+    uiLayoutGrid: 'Grille',
+    uiCtaPickLayout: 'Choisir la mise en page',
     uiPaletteDrop: 'Déposer une fiche sur le canevas',
     uiDropBanner: 'Déposer dans « {name} »',
     uiDropBannerWithFields: 'Déposer dans « {name} » — {n} champs # détectés',

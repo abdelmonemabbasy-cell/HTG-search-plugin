@@ -76,7 +76,7 @@ export function PresetsMenu({ presets, onApply, onSave, onDelete, locale }: Prop
                 >
                   <span class={styles.presetsRowLabel}>{p.label}</span>
                   <span class={styles.presetsRowMeta}>
-                    {p.mode} · {p.platform} · {p.locale.toUpperCase()}
+                    {p.multiLayout} · {p.platform} · {p.locale.toUpperCase()}
                   </span>
                 </button>
                 <button

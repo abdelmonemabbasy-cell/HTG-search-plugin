@@ -5,6 +5,13 @@ import type { Platform } from './platforms';
 
 export type InsertMode = 'single' | 'list' | 'grid';
 
+/**
+ * The user's preferred layout when dropping 2+ properties. The single-card
+ * case is implied by selection count, so the UI no longer exposes a 'single'
+ * mode toggle — selection-count + multiLayout fully describe the intent.
+ */
+export type MultiLayout = 'list' | 'grid';
+
 export type SortKey = 'default' | 'priceAsc' | 'priceDesc' | 'ratingDesc' | 'newest';
 
 /** Plugin-managed theme. 'auto' follows Figma's host theme. */
@@ -20,7 +27,7 @@ export interface UiPreset {
   id: string;
   /** User-supplied display name. */
   label: string;
-  mode: InsertMode;
+  multiLayout: MultiLayout;
   platform: Platform;
   locale: Locale;
   gridColumns: number;
@@ -65,7 +72,7 @@ export interface UiFilters {
 }
 
 export interface UiState {
-  mode: InsertMode;
+  multiLayout: MultiLayout;
   search: string;
   sort: SortKey;
   gridColumns: number;

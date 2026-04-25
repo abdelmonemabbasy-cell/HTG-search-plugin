@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import type { InsertMode, SelectionTarget } from '@shared/messages';
+import type { MultiLayout, SelectionTarget } from '@shared/messages';
 import type { Locale } from '@shared/locales';
 import { t } from '@shared/locales';
 import styles from '../styles.css';
@@ -11,7 +11,7 @@ interface Props {
   /** What will land if the user clicks Drop right now. Drives the
       banner's sub-line so they know exactly what's about to happen. */
   selectedCount: number;
-  mode: InsertMode;
+  multiLayout: MultiLayout;
   locale: Locale;
 }
 
@@ -36,7 +36,7 @@ export function DropTargetBanner({
   replace,
   onReplaceChange,
   selectedCount,
-  mode,
+  multiLayout,
   locale,
 }: Props) {
   // Build the sub-line that describes what will land.
@@ -47,11 +47,11 @@ export function DropTargetBanner({
     if (target.hasFieldNames) {
       return t('uiDropBannerSubPopulate', locale, { n: selectedCount });
     }
-    if (mode === 'single' || selectedCount === 1) {
+    if (selectedCount === 1) {
       return t('uiDropBannerSubSingle', locale);
     }
     return t(
-      mode === 'list' ? 'uiDropBannerSubList' : 'uiDropBannerSubGrid',
+      multiLayout === 'list' ? 'uiDropBannerSubList' : 'uiDropBannerSubGrid',
       locale,
       { n: selectedCount },
     );

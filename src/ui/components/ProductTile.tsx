@@ -57,6 +57,12 @@ export function ProductTile({
         class={styles.tileImage}
         style={{ backgroundImage: `url(${offer.images[0]?.url})` }}
       >
+        <span
+          class={`${styles.tileSelectBox} ${selected ? styles.tileSelectBoxOn : ''}`}
+          aria-hidden="true"
+        >
+          {selected ? '✓' : ''}
+        </span>
         {badge && (
           <span class={`${styles.tileBadge} ${isDeal ? styles.tileBadgeGreen : ''}`}>
             {badge.replace(/_/g, ' ')}
@@ -76,7 +82,6 @@ export function ProductTile({
         >
           {favourite ? '★' : '☆'}
         </button>
-        {selected && <span class={styles.tileCheck}>✓</span>}
         <div class={styles.tileHoverActions}>
           <button
             class={styles.tileHoverBtn}

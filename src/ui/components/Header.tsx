@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { InsertMode, Theme, UiPreset } from '@shared/messages';
+import type { Theme, UiPreset } from '@shared/messages';
 import type { Locale, StringKey } from '@shared/locales';
 import { t } from '@shared/locales';
 import { PresetsMenu } from './PresetsMenu';
@@ -8,8 +8,6 @@ import { HelpMenu } from './HelpMenu';
 import styles from '../styles.css';
 
 interface Props {
-  mode: InsertMode;
-  onModeChange: (mode: InsertMode) => void;
   onRefresh: () => void;
   onFindAll: () => void;
   theme: Theme;
@@ -21,12 +19,6 @@ interface Props {
   locale: Locale;
 }
 
-const MODES: Array<{ id: InsertMode; labelKey: StringKey }> = [
-  { id: 'single', labelKey: 'uiModeSingle' },
-  { id: 'list', labelKey: 'uiModeList' },
-  { id: 'grid', labelKey: 'uiModeGrid' },
-];
-
 const THEMES: Array<{ id: Theme; labelKey: StringKey; icon: string }> = [
   { id: 'auto', labelKey: 'uiThemeAuto', icon: '◐' },
   { id: 'light', labelKey: 'uiThemeLight', icon: '☀' },
@@ -34,8 +26,6 @@ const THEMES: Array<{ id: Theme; labelKey: StringKey; icon: string }> = [
 ];
 
 export function Header({
-  mode,
-  onModeChange,
   onRefresh,
   onFindAll,
   theme,
@@ -127,17 +117,6 @@ export function Header({
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
           </svg>
         </button>
-        <div class={styles.modeToggle} role="tablist">
-          {MODES.map((m) => (
-            <button
-              key={m.id}
-              class={`${styles.modeOption} ${mode === m.id ? styles.modeOptionActive : ''}`}
-              onClick={() => onModeChange(m.id)}
-            >
-              {t(m.labelKey, locale)}
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );

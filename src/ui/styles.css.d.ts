@@ -52,6 +52,13 @@ declare const styles: {
   readonly "dropBannerText": string;
   readonly "dropBannerTitle": string;
   readonly "dropBannerToggle": string;
+  readonly "dropCtaChevron": string;
+  readonly "dropCtaMenu": string;
+  readonly "dropCtaMenuCheck": string;
+  readonly "dropCtaMenuItem": string;
+  readonly "dropCtaMenuItemActive": string;
+  readonly "dropCtaPrimary": string;
+  readonly "dropCtaSplit": string;
   readonly "empty": string;
   readonly "emptyBtn": string;
   readonly "emptyIcon": string;
@@ -102,9 +109,6 @@ declare const styles: {
   readonly "marketSelectChevron": string;
   readonly "marketSelectFlag": string;
   readonly "marketSelectWrap": string;
-  readonly "modeOption": string;
-  readonly "modeOptionActive": string;
-  readonly "modeToggle": string;
   readonly "palette": string;
   readonly "paletteEmpty": string;
   readonly "paletteHint": string;
@@ -160,7 +164,6 @@ declare const styles: {
   readonly "tileBadge": string;
   readonly "tileBadgeGreen": string;
   readonly "tileBody": string;
-  readonly "tileCheck": string;
   readonly "tileDiscount": string;
   readonly "tileFavBtn": string;
   readonly "tileFavBtnActive": string;
@@ -175,6 +178,8 @@ declare const styles: {
   readonly "tilePulse": string;
   readonly "tileRating": string;
   readonly "tileRatingStar": string;
+  readonly "tileSelectBox": string;
+  readonly "tileSelectBoxOn": string;
   readonly "tileSelected": string;
   readonly "tileSkeleton": string;
   readonly "tileSkeletonBody": string;
