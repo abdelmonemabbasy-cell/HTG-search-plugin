@@ -94,6 +94,9 @@ export type StringKey =
   // --- Plugin UI chrome ---
   | 'uiMarket'
   | 'uiSurface'
+  | 'uiAppearance'
+  | 'uiAppearanceLight'
+  | 'uiAppearanceDark'
   | 'uiRefresh'
   | 'uiSearchPlaceholder'
   | 'uiSearchClear'
@@ -282,6 +285,9 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'House',
     uiMarket: 'Market',
     uiSurface: 'Surface',
+    uiAppearance: 'Appearance',
+    uiAppearanceLight: 'Light',
+    uiAppearanceDark: 'Dark',
     uiRefresh: 'Refresh selected cards (re-render against current data)',
     uiSearchPlaceholder: 'Search property, city or country',
     uiSearchClear: 'Clear search',
@@ -468,6 +474,9 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'Haus',
     uiMarket: 'Markt',
     uiSurface: 'Oberfläche',
+    uiAppearance: 'Darstellung',
+    uiAppearanceLight: 'Hell',
+    uiAppearanceDark: 'Dunkel',
     uiRefresh: 'Ausgewählte Karten aktualisieren (mit aktuellen Daten neu rendern)',
     uiSearchPlaceholder: 'Unterkunft, Stadt oder Land suchen',
     uiSearchClear: 'Suche löschen',
@@ -654,6 +663,9 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'Casa',
     uiMarket: 'Mercado',
     uiSurface: 'Superficie',
+    uiAppearance: 'Apariencia',
+    uiAppearanceLight: 'Claro',
+    uiAppearanceDark: 'Oscuro',
     uiRefresh: 'Actualizar las tarjetas seleccionadas (volver a renderizar con los datos actuales)',
     uiSearchPlaceholder: 'Buscar propiedad, ciudad o país',
     uiSearchClear: 'Limpiar búsqueda',
@@ -840,6 +852,9 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     house: 'Maison',
     uiMarket: 'Marché',
     uiSurface: 'Surface',
+    uiAppearance: 'Apparence',
+    uiAppearanceLight: 'Clair',
+    uiAppearanceDark: 'Sombre',
     uiRefresh: 'Actualiser les fiches sélectionnées (re-rendre avec les données actuelles)',
     uiSearchPlaceholder: 'Rechercher logement, ville ou pays',
     uiSearchClear: 'Effacer la recherche',

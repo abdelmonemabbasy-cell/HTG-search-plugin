@@ -17,6 +17,15 @@ export type SortKey = 'default' | 'priceAsc' | 'priceDesc' | 'ratingDesc' | 'new
 /** Plugin-managed theme. 'auto' follows Figma's host theme. */
 export type Theme = 'auto' | 'light' | 'dark';
 
+/**
+ * Appearance of the dropped card / sections — independent of the
+ * plugin's own UI theme. A designer building a dark-mode mockup
+ * picks `dark` to drop dark-variant cards; the plugin chrome stays
+ * on whatever Theme it is set to. Hooks the same way design-system
+ * components carry a `colorScheme` property.
+ */
+export type Appearance = 'light' | 'dark';
+
 export interface UiSize {
   width: number;
   height: number;
@@ -78,6 +87,7 @@ export interface UiState {
   gridColumns: number;
   locale: Locale;
   platform: Platform;
+  appearance: Appearance;
   filters: UiFilters;
   theme?: Theme;
   favourites?: string[];
@@ -92,6 +102,7 @@ export interface InsertCardsPayload {
   gridColumns: number;
   locale: Locale;
   platform: Platform;
+  appearance: Appearance;
 }
 
 /** Level-2 insert (detail-page sections for a single offer). */
@@ -101,6 +112,7 @@ export interface InsertSectionsPayload {
   sections: SectionKind[];
   locale: Locale;
   platform: Platform;
+  appearance: Appearance;
 }
 
 export type InsertPayload = InsertCardsPayload | InsertSectionsPayload;

@@ -8,6 +8,7 @@ import type {
   InsertHandler,
   InsertMode,
   MultiLayout,
+  Appearance,
   InsertedHandler,
   ToastMessage,
   LoadedPayload,
@@ -50,6 +51,7 @@ const DEFAULT_STATE: UiState = {
   gridColumns: 2,
   locale: 'en',
   platform: 'web',
+  appearance: 'light',
   filters: {},
   theme: 'auto',
 };
@@ -86,6 +88,7 @@ export function App(props: LoadedPayload) {
   const [gridColumns, setGridColumns] = useState<number>(saved.gridColumns);
   const [locale, setLocale] = useState<Locale>(saved.locale);
   const [platform, setPlatform] = useState<Platform>(saved.platform);
+  const [appearance, setAppearance] = useState<Appearance>(saved.appearance ?? 'light');
   const [filters, setFilters] = useState<Filters>(saved.filters);
   const [theme, setTheme] = useState<Theme>(saved.theme ?? 'auto');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -229,6 +232,7 @@ export function App(props: LoadedPayload) {
         gridColumns,
         locale,
         platform,
+        appearance,
         filters,
         theme,
         favourites: Array.from(favourites),
@@ -243,6 +247,7 @@ export function App(props: LoadedPayload) {
     gridColumns,
     locale,
     platform,
+    appearance,
     filters,
     theme,
     favourites,
@@ -347,6 +352,7 @@ export function App(props: LoadedPayload) {
       gridColumns,
       locale,
       platform,
+      appearance,
     });
   };
 
@@ -358,6 +364,7 @@ export function App(props: LoadedPayload) {
       sections: Array.from(selectedSections),
       locale,
       platform,
+      appearance,
     });
   };
 
@@ -393,19 +400,21 @@ export function App(props: LoadedPayload) {
 
   const onTileDragStart = (offer: Offer, e: DragEvent) => {
     if (!e.dataTransfer) return;
-    // Set the MIME types Figma's figma.on('drop') handler dispatches on.
-    // We send three flavours so downstream code can differentiate single
-    // vs multi vs section drops without having to inspect the body shape.
+    // Set the MIME types Figma's figma.on('drop') handler dispatches on
+    // FIRST so that even if the drag-image setup throws, the data is on
+    // the event when it lands on the canvas. Three flavours so the main
+    // thread can differentiate single vs multi vs section drops without
+    // inspecting the body.
     const isMulti = selectedIds.size > 1 && selectedIds.has(offer.id);
     if (isMulti) {
       const ids = Array.from(selectedIds);
-      const body = { offerIds: ids, locale, platform, mode: multiLayout };
+      const body = { offerIds: ids, locale, platform, appearance, mode: multiLayout };
       e.dataTransfer.setData(
         'application/htg-offer-multi',
         JSON.stringify(body),
       );
     } else {
-      const body = { offerId: offer.id, locale, platform };
+      const body = { offerId: offer.id, locale, platform, appearance };
       e.dataTransfer.setData(
         'application/htg-offer',
         JSON.stringify(body),
@@ -414,16 +423,19 @@ export function App(props: LoadedPayload) {
     // text/plain fallback so non-Figma drop targets get something readable.
     e.dataTransfer.setData('text/plain', offer.title);
     e.dataTransfer.effectAllowed = 'copy';
-    attachDragImage(e, offer, locale);
+    // Custom drag image. Wrapped in try/catch — if it fails, the drag
+    // still proceeds with the browser's default tile snapshot rather
+    // than aborting the whole drag.
+    try { attachDragImage(e, offer, locale); } catch {}
   };
 
   const onSectionDragStart = (offer: Offer, kind: SectionKind, e: DragEvent) => {
     if (!e.dataTransfer) return;
-    const body = { offerId: offer.id, sectionKind: kind, locale, platform };
+    const body = { offerId: offer.id, sectionKind: kind, locale, platform, appearance };
     e.dataTransfer.setData('application/htg-section', JSON.stringify(body));
     e.dataTransfer.setData('text/plain', `${kind} · ${offer.title}`);
     e.dataTransfer.effectAllowed = 'copy';
-    attachSectionDragImage(e, sectionDragLabel(kind, locale));
+    try { attachSectionDragImage(e, sectionDragLabel(kind, locale)); } catch {}
   };
 
   // Canvas drops are handled exclusively by the main thread's
@@ -684,6 +696,8 @@ export function App(props: LoadedPayload) {
           onLocaleChange={setLocale}
           platform={platform}
           onPlatformChange={setPlatform}
+          appearance={appearance}
+          onAppearanceChange={setAppearance}
         />
         <DetailView
           offer={detailOffer}
@@ -736,6 +750,8 @@ export function App(props: LoadedPayload) {
         onLocaleChange={setLocale}
         platform={platform}
         onPlatformChange={setPlatform}
+        appearance={appearance}
+        onAppearanceChange={setAppearance}
       />
       <SearchBar value={search} onChange={setSearch} locale={locale} />
       <FilterBar

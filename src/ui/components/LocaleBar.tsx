@@ -4,6 +4,7 @@ import type { Locale } from '@shared/locales';
 import { LOCALES, t } from '@shared/locales';
 import type { Platform } from '@shared/platforms';
 import { PLATFORMS } from '@shared/platforms';
+import type { Appearance } from '@shared/messages';
 import styles from '../styles.css';
 
 interface Props {
@@ -11,9 +12,18 @@ interface Props {
   onLocaleChange: (locale: Locale) => void;
   platform: Platform;
   onPlatformChange: (platform: Platform) => void;
+  appearance: Appearance;
+  onAppearanceChange: (a: Appearance) => void;
 }
 
-export function LocaleBar({ locale, onLocaleChange, platform, onPlatformChange }: Props) {
+export function LocaleBar({
+  locale,
+  onLocaleChange,
+  platform,
+  onPlatformChange,
+  appearance,
+  onAppearanceChange,
+}: Props) {
   return (
     <div class={styles.localeBar}>
       <div class={styles.localeGroup}>
@@ -32,6 +42,41 @@ export function LocaleBar({ locale, onLocaleChange, platform, onPlatformChange }
               {p.label}
             </button>
           ))}
+        </div>
+      </div>
+      <div class={styles.localeGroup}>
+        <span class={styles.localeGroupLabel}>{t('uiAppearance', locale)}</span>
+        <div class={styles.pillGroup}>
+          <button
+            class={`${styles.pillBtn} ${appearance === 'light' ? styles.pillBtnActive : ''}`}
+            onClick={() => onAppearanceChange('light')}
+            title={t('uiAppearanceLight', locale)}
+            aria-pressed={appearance === 'light'}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2" />
+              <path d="M12 20v2" />
+              <path d="m4.93 4.93 1.41 1.41" />
+              <path d="m17.66 17.66 1.41 1.41" />
+              <path d="M2 12h2" />
+              <path d="M20 12h2" />
+              <path d="m4.93 19.07 1.41-1.41" />
+              <path d="m17.66 6.34 1.41-1.41" />
+            </svg>
+            <span>{t('uiAppearanceLight', locale)}</span>
+          </button>
+          <button
+            class={`${styles.pillBtn} ${appearance === 'dark' ? styles.pillBtnActive : ''}`}
+            onClick={() => onAppearanceChange('dark')}
+            title={t('uiAppearanceDark', locale)}
+            aria-pressed={appearance === 'dark'}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+            <span>{t('uiAppearanceDark', locale)}</span>
+          </button>
         </div>
       </div>
     </div>
