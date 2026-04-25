@@ -1,16 +1,64 @@
-# HomeDrop — Figma Plugin
+<p align="center">
+  <img src="assets/icon.svg" alt="HomeDrop" width="96" height="96" />
+</p>
 
-HomeDrop is the HomeToGo design team's Figma plugin: drop real
-vacation-rental product data straight into your designs in one click
-(or one drag). Browse, filter, drill into a property, and place a
-fully-populated HomeToGo product card, list, grid, or detail-page
-section — without copy-pasting a single title, price, or image.
+<h1 align="center">HomeDrop</h1>
+<p align="center">
+  A Figma plugin for HomeToGo designers — drop real product data into
+  your mockups without copy-pasting a single title, price, or image.
+</p>
 
-> **Status:** Proof of concept. Today the catalogue is a bundled JSON
-> file (`src/data/products.json`) consumed via `JsonOffersSource`. v2
-> swaps in `ApiOffersSource` (one line in `src/ui/App.tsx`) so the
-> plugin pulls live data from the HomeToGo search/product API. See
-> [`docs/ARCHITECTURE.md#data-layer-v08`](docs/ARCHITECTURE.md).
+---
+
+## Why I'm building this
+
+I'm a HomeToGo designer. Most of my work is search, listing, and
+property-detail flows — surfaces where the *data* is the design. A
+mockup with `Lorem ipsum` and a placeholder image lies about how the
+real product feels: titles wrap differently, ratings sit at unflatter‑
+ing decimals, prices push CTAs around, missing photos break grids.
+Designing without real data is designing without the actual problem.
+
+The other half of the work is keeping our screens in lock-step with
+the **HomeToGo Design System** — same card geometry, same purple,
+same typographic rhythm — across **web, iOS and Android**. That
+contract is easy to drift on when every designer hand-builds the
+same card from scratch.
+
+**HomeDrop** is my attempt to close both gaps in one move:
+
+1. Pull real HomeToGo property data (title, price, rating, photos,
+   amenities, capacity, location…) into Figma with one click or one
+   drag.
+2. Render it through the official card / section components so
+   anything I drop is already on-system, in the platform variant I
+   need, in the locale I'm designing for.
+
+This repo is a **proof of concept**. The catalogue is mock JSON
+(`src/data/products.json`, 10 hand-curated offers in EN/DE/ES/FR)
+because we don't have an internal API key set up for the plugin
+sandbox yet. Once we do, **v2** swaps the in-process source for an
+`ApiOffersSource` and the rest of the plugin doesn't change — see
+[`docs/ARCHITECTURE.md#data-layer-v08`](docs/ARCHITECTURE.md). I want
+to get the UX nailed *before* we wire the API so we don't ship
+something half-baked the moment data is available.
+
+---
+
+## What you can drop
+
+| Output | Where |
+|--------|-------|
+| **One product card** | A single property card at the cursor / canvas centre. |
+| **A list of cards** | N cards in a vertical auto-layout stack. |
+| **A grid of cards** | N cards in a 2 / 3 / 4-column wrapping auto-layout. |
+| **Detail-page sections** | Any subset of 12 sections (Gallery · Title header · Quick facts · Reasons to book · Reviews · Amenities · Room information · Description · House rules · Location · Price breakdown · Cancellation policy) stacked as one auto-layout container that rebuilds the full property page. |
+
+Every output respects the chosen **platform** (`Web` · `iOS` ·
+`Android`) and **locale** (`EN` · `DE` · `ES` · `FR`). Card geometry,
+corner radii, shadow, stroke, every visible string and the price
+format all change to match. Same source data, three platform
+variants, four languages.
 
 ---
 
@@ -27,177 +75,110 @@ In Figma desktop:
 2. Pick the generated `manifest.json` at the repo root.
 3. **Plugins → Development → HomeDrop**.
 
-For iterative development:
+Iterating:
 
 ```bash
 npm run watch      # incremental rebuild on save
-npm test           # run the Vitest suite once
+npm test           # Vitest suite
 ```
 
 ---
 
-## What HomeDrop does
+## How it feels to use
 
-The plugin places **discrete components**, never full screens — one
-card, a list of cards, a grid of cards, or one-or-more detail-page
-sections. Designers compose those outputs into their own screen
-chrome (status bars, navigation, sticky CTAs).
+### The Drop CTA infers what to do
 
-### Selection model + Drop CTA
+Tiles are always multi-selectable; the footer button reads the
+selection and decides:
 
-Tiles are always multi-selectable. The footer CTA infers the layout
-from the selection count plus a persisted `multiLayout` preference
-(`list` / `grid`):
-
-| Selection | CTA |
-|-----------|-----|
-| 0 | Disabled "Pick a property" |
-| 1 | `Drop` — single card at viewport centre |
-| 2+ | Split-button `Drop {n} as list ▾` (chevron opens a List / Grid menu). Layout choice persists. |
+| Selection | Button |
+|-----------|--------|
+| Nothing | Disabled "Pick a property" |
+| 1 tile | `Drop` — single card at viewport centre |
+| 2+ tiles | Split-button `Drop {n} as list ▾` (chevron opens List / Grid). Layout choice persists. |
 
 - **Plain click** replaces the selection with that tile.
 - **Shift-click** extends the visible-list range from the anchor.
-- **⌘ / Ctrl-click** toggles a tile additively without moving the
-  anchor.
+- **⌘ / Ctrl-click** toggles a tile additively.
 
-When the CTA becomes enabled (count goes 0 → 1), a brief pulse draws
-the eye to the freshly-actionable button.
+When the CTA crosses 0 → 1 selected, it pulses once so you notice
+it's now actionable.
 
-### Two-level navigation
+### Listing → details (two levels)
 
-- **Level 1 — Search.** Browse, search, filter, sort, multi-select,
-  drop. The default surface.
-- **Level 2 — Property detail.** Click `→` on a tile to drill in. The
-  hero, a property-facts panel (guests / bedrooms / baths / rating,
-  short description, amenity chips, price + provider), and a grid of
-  12 sections all scroll under a sticky breadcrumb (`← Properties /
-  <Property name>`). Pick any subset of sections — Gallery, Title
-  header, Quick facts, Reasons to book, Reviews, Amenities, Room
-  information, Description, House rules, Location, Price breakdown,
-  Cancellation policy — and drop them as one auto-layout container
-  that rebuilds the full rental detail page.
+- **Level 1.** Grid of tiles. Search / filter chips / sort / favourites
+  star (heart). Pick one or many, drop.
+- **Level 2.** Click `→` on a tile to drill into the property. The
+  detail page carries the hero, a property-facts panel (guests /
+  bedrooms / baths / rating, short description, amenity chips, price
+  + provider), and a 12-tile section grid. Pick the sections you
+  need; drop.
 
-### Locale + platform aware
-
-Every card and section renders in the chosen **locale**
-(`en` / `de` / `es` / `fr`) and **platform** (`web` / `iOS` /
-`Android`). Locale drives prices, category labels, amenity headings,
-sub-rating labels, CTAs — every visible string. Platform drives card
-dimensions, corner radii, shadow strength, and (iOS vs Android)
-whether the card has a stroke.
-
-Both selections persist via Figma's `clientStorage` and stamp on
-every inserted node, so the **Refresh** button can re-render against
-the current data without losing presentation.
-
-### Adaptive cards
-
-Every section is conditional on the offer actually carrying that
-data. No discount → no "Last-minute deal" pill. No rating → "New
-listing". Fewer than 2 images → no pagination dots. Amenities the
-plugin doesn't have icons for are silently dropped. Designers never
-see placeholder noise.
-
----
-
-## How the UX works
+The detail-page hero is also draggable — drag from the hero to drop
+the property's card. Each section tile is independently draggable
+too.
 
 ### Four ways to drop a card
 
-1. **Click the Drop CTA** with no canvas selection → card lands at
-   the viewport centre.
-2. **Click Drop with a single `#fieldName` text/shape selected** → the
-   plugin fills that one layer with the matching offer field. (e.g.
-   select `#title` → the layer's text becomes the property title.)
-3. **Click Drop with a frame selected that contains `#fieldName`
-   children** → the plugin populates every matching descendant.
-4. **Drag a tile onto the canvas** → routed through Figma's native
-   `figma.on('drop')` event. Same target inference: dropped on a
-   `#field` text/shape → fill that one; dropped on a frame with
-   `#field` descendants → fill them all; dropped on a plain frame →
-   append the card as a child; dropped on the page → land at the
-   cursor.
+1. **Click Drop with no canvas selection** → card lands at viewport
+   centre.
+2. **Click Drop with a single `#field` text/shape selected** → fills
+   that one layer with the matching offer field. Pick `#title` and
+   click Drop, your text layer becomes the property title.
+3. **Click Drop with a frame selected that contains `#field`
+   children** → fills every matching descendant in place.
+4. **Drag a tile onto the canvas** → same target inference, but at
+   the cursor: dropped on a `#field` text/shape fills it; on a frame
+   with `#field` descendants fills them all; on any other frame
+   appends as a child; on the page lands at the cursor coords.
 
-The detail-page hero (Level 2) is also draggable and behaves like a
-tile — drag from the hero to drop the property's card.
+This is how the plugin connects to your **design system** — name
+your component's text/image layers `#title`, `#image`,
+`#pricePerNight`, etc. and the plugin overrides them in place.
 
-Each of the 12 detail sections is independently draggable too: drag a
-section tile from the detail-grid onto the canvas to drop just that
-one section.
+### Smaller things that add up
 
-### Favourites
+- **⌘K / Ctrl+K** opens a fuzzy command palette: Drop, Random,
+  Refresh, Find all, switch platform / locale / theme / multi-layout,
+  apply preset.
+- **Heart any tile** to favourite it — the star bounces, the
+  Favourites chip filters the grid to just those.
+- **Refresh** re-renders selected HomeDrop nodes against current data
+  in the current locale + platform.
+- **Find all** selects every HomeDrop card on the current page and
+  zooms to fit.
+- **Presets** save the current `multiLayout + platform + locale +
+  gridColumns + sort` under a name (auto-suggested as
+  `Web · EN · 3 cols`, just hit Enter).
+- **Help** menu in the header — six bite-size cards explaining Drop /
+  drag / populate / palette / multi-select / favourites.
+- **Persistent footer Undo** — the toast Undo dies after 5 s, so a
+  small `↺ Undo` pill stays in the footer until the next drop. **⌘Z
+  / Ctrl+Z** also fires it.
+- **Theme picker** (Auto / Light / Dark). Auto follows Figma's host
+  theme. Dark mode uses Figma's native panel palette so the plugin
+  reads as part of the host.
+- **Resizable plugin window** — clamped 360×480 → 900×1200; persists.
+- **Canvas → plugin awareness** — select an inserted HomeDrop card on
+  canvas → its tile in the plugin pulses and scrolls into view, so
+  you always know which tile a placed card maps to.
 
-- **Star (★)** any tile to favourite it (the star bounces briefly
-  when toggled). The Favourites filter chip in the search bar shows
-  the count and filters the grid to just the starred ones. Both
-  persist across sessions.
-- **`R`** picks a random visible tile.
+### Adaptive cards
 
-### ⌘K command palette
-
-Press `⌘K` (or `Ctrl+K`) for fuzzy substring search across every
-plugin command:
-
-- **Drop**, **Random**, **Refresh**, **Find all** (selects every
-  HomeDrop card on the current page and zooms to fit).
-- **Multi layout** (`list` / `grid`), **Platform** (`web` / `iOS` /
-  `Android`), **Locale** (`EN` / `DE` / `ES` / `FR`), **Theme**
-  (`Auto` / `Light` / `Dark`).
-- **Apply preset** restores a saved combination of multiLayout +
-  platform + locale + gridColumns + sort.
-
-### Presets
-
-The header's **Presets** dropdown lists every saved combination of
-`multiLayout + platform + locale + gridColumns + sort`. "Save current
-settings…" expands an inline naming row, prefilled with a smart
-default (`Web · EN · 3 cols`); press Enter to commit.
-
-### Help menu
-
-The header's **`?`** dropdown carries six bite-size cards covering
-Drop, drag, populate, ⌘K palette, multi-select, and the favourites
-star — everything a first-time user needs to discover the power
-features.
-
-### Canvas → plugin awareness
-
-Select an inserted HomeDrop card on the canvas → its tile in the
-plugin **pulses** for 1.4 s and scrolls into view, so designers know
-which property a placed card maps to.
-
-### Toast + persistent Undo
-
-Every successful drop fires a 5 s bottom toast confirming what
-landed. The toast carries an **Undo** button that removes the
-freshly-placed nodes.
-
-If the toast disappears before you react, a small **`↺ Undo`** pill
-stays in the footer between the hint and the Drop CTA until the next
-drop replaces it. **`⌘Z` / `Ctrl+Z`** also fires the same undo.
-
-### Theme + window sizing
-
-- **Theme picker** in the header (Auto / Light / Dark). Auto follows
-  Figma's host theme via `html.figma-dark` / `html.figma-darker`;
-  Light and Dark force an override. Dark mode uses Figma's native
-  panel palette so the plugin reads as part of the host.
-- **Drag the bottom-right corner** to resize the plugin window. Size
-  is clamped 360×480 → 900×1200 and persisted to `clientStorage`.
-
-### Search
-
-Autofocused on open, with a `×` clear button that appears when there
-is text. Search across title, city, country, and neighbourhood.
+Every section is conditional on the offer carrying that data. No
+discount → no "Last-minute deal" pill. No rating → "New listing".
+Fewer than 2 photos → no pagination dots. Amenities the plugin doesn't
+have icons for are silently dropped. Designers never see placeholder
+noise.
 
 ---
 
-## Populate your own component
+## Populate spec (the design-system seam)
 
-Name your layers with a `#` prefix matching one of the documented
-keys, and the plugin will override them in place — either via the
-Drop CTA in single-card mode or by dragging a tile / the detail
-hero directly onto your layer or frame.
+Name a layer with a `#` prefix matching one of the keys below and the
+plugin will fill it in place — either via the Drop CTA in single-card
+mode or by dragging a tile / the detail hero directly onto your layer
+or frame.
 
 | Layer name | Gets set to |
 |------------|-------------|
@@ -213,11 +194,53 @@ hero directly onto your layer or frame.
 | `#imageSecondary` | Second image |
 
 Full spec in [`docs/LAYER_NAMING_SPEC.md`](docs/LAYER_NAMING_SPEC.md).
-Match is case- and separator-insensitive
-(`#PricePerNight` = `#price_per_night` = `#price-per-night`).
+Match is case- and separator-insensitive (`#PricePerNight` =
+`#price_per_night` = `#price-per-night`).
 
 A single selected `#field` text/shape fills that one node. A frame
-that contains `#field` descendants fills them all.
+with `#field` descendants fills them all. So you can either build a
+fully-named card component once and let HomeDrop populate the whole
+thing, or keep ad-hoc text layers in your existing mockups and fill
+them one-by-one.
+
+---
+
+## The PoC → v2 path
+
+Today's catalogue: `src/data/products.json` — 10 hand-built offers
+that exercise every visible state (discount / no discount, rating /
+new listing, full amenities / sparse amenities, badges, multiple
+images / single image). The localised strings are pre-rendered for
+EN/DE/ES/FR.
+
+The data layer lives in the UI thread (where `fetch()` works in the
+plugin sandbox), behind an `OffersSource` interface:
+
+```ts
+// src/ui/offers-source.ts
+export interface OffersSource {
+  search(query: SearchQuery): Promise<{ offers: Offer[]; total: number }>;
+}
+
+export const defaultOffersSource: OffersSource = new JsonOffersSource();
+```
+
+**v2** is a one-line change in `src/ui/App.tsx`:
+
+```ts
+// const [source] = useState<OffersSource>(() => defaultOffersSource);
+const [source] = useState<OffersSource>(() => new ApiOffersSource(API_URL));
+```
+
+`ApiOffersSource` is sketched in `src/ui/offers-source.ts` (commented
+out) along with `parseApiOffer()` so you can see the shape the
+adapter needs to produce. Add the API host + image CDN to
+`package.json → figma-plugin.networkAccess.allowedDomains`, drop the
+`localize()` call (the API returns locale-specific data directly),
+and the rest of the plugin doesn't change.
+
+This split is on purpose: the plugin's UX is locked in *before* the
+API exists so when the API arrives we ship a swap, not a redesign.
 
 ---
 
@@ -244,6 +267,8 @@ src/
   shared/    Types, message contracts, locale strings (consumed by both)
   data/      PoC JSON (10 offers, en/de/es/fr — v2 drops this)
 
+assets/      icon.svg (HomeToGo wordmark on brand purple) +
+             hometogo-logo.svg (in-header wordmark)
 tests/       Vitest unit tests for src/shared/ modules
 docs/        See the Docs section below
 ```
@@ -265,11 +290,6 @@ Two threads, clean separation:
 10 typed message channels carry everything between threads. See the
 [message-channels table in CLAUDE.md](CLAUDE.md#message-channels).
 
-The data layer is intentionally on the UI thread (where `fetch()`
-lives) so v2's API swap is a one-line change in `App.tsx`. See
-[`docs/ARCHITECTURE.md#data-layer-v08`](docs/ARCHITECTURE.md) for
-the boot+sync flow and the v2 transition path.
-
 ---
 
 ## Keyboard shortcuts
@@ -289,7 +309,7 @@ the boot+sync flow and the v2 transition path.
 
 ## Docs
 
-- [CLAUDE.md](CLAUDE.md) — project context for AI collaborators,
+- [CLAUDE.md](CLAUDE.md) — project context for collaborators,
   including the message-channels table and interaction model.
 - [CHANGELOG.md](CHANGELOG.md) — what changed and when.
 - [docs/SCOPE.md](docs/SCOPE.md) — PoC scope and non-goals.
