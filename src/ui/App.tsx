@@ -382,7 +382,26 @@ export function App(props: LoadedPayload) {
 
   const onTileDragStart = (offer: Offer, e: DragEvent) => {
     if (!e.dataTransfer) return;
-    e.dataTransfer.setData('text/plain', offer.id);
+    // Set the MIME types Figma's figma.on('drop') handler dispatches on.
+    // We send three flavours so downstream code can differentiate single
+    // vs multi vs section drops without having to inspect the body shape.
+    const isMulti = mode !== 'single' && selectedIds.size > 1;
+    if (isMulti) {
+      const ids = Array.from(selectedIds);
+      const body = { offerIds: ids, locale, platform, mode };
+      e.dataTransfer.setData(
+        'application/htg-offer-multi',
+        JSON.stringify(body),
+      );
+    } else {
+      const body = { offerId: offer.id, locale, platform };
+      e.dataTransfer.setData(
+        'application/htg-offer',
+        JSON.stringify(body),
+      );
+    }
+    // text/plain fallback so non-Figma drop targets get something readable.
+    e.dataTransfer.setData('text/plain', offer.title);
     e.dataTransfer.effectAllowed = 'copy';
     attachDragImage(e, offer, locale);
     onTileHoverLeave();

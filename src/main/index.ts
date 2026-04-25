@@ -165,9 +165,9 @@ export default async function () {
   });
 
   // Wire canvas → UI awareness. We surface two things on every selection
-  // change: the offerId of a tagged HTG card (so the matching tile can
-  // pulse), and the "drop target" — a frame the user has selected so the
-  // UI can show the "Drop into 'X'" banner with a Replace toggle.
+  // change: the offerId of a tagged HomeDrop card (so the matching tile
+  // can pulse), and the "drop target" — a frame the user has selected so
+  // the UI can show the "Drop into 'X'" banner with a Replace toggle.
   figma.on('selectionchange', () => {
     pushHighlight();
     pushSelectionTarget();
@@ -175,6 +175,140 @@ export default async function () {
   // Initial push so the UI starts in sync.
   pushHighlight();
   pushSelectionTarget();
+
+  // Native Figma drop event. Fires when the user releases a drag from
+  // the plugin iframe over the canvas. We dispatch on three MIME types:
+  //   - application/htg-offer       → single card
+  //   - application/htg-offer-multi → list/grid of cards
+  //   - application/htg-section     → a single detail-page section
+  // Returning false tells Figma not to insert a default text node.
+  figma.on('drop', (event) => {
+    for (const item of event.items) {
+      if (item.type === 'application/htg-offer') {
+        const body = safeParse(item.data) as { offerId?: string; locale?: Locale; platform?: Platform } | null;
+        if (!body || !body.offerId) continue;
+        void handleNativeDropOffer(body.offerId, body.locale ?? 'en', body.platform ?? 'web', event);
+        return false;
+      }
+      if (item.type === 'application/htg-offer-multi') {
+        const body = safeParse(item.data) as
+          | { offerIds?: string[]; locale?: Locale; platform?: Platform; mode?: InsertMode }
+          | null;
+        if (!body || !Array.isArray(body.offerIds) || body.offerIds.length === 0) continue;
+        void handleNativeDropMulti(
+          body.offerIds,
+          body.locale ?? 'en',
+          body.platform ?? 'web',
+          body.mode ?? 'list',
+          event,
+        );
+        return false;
+      }
+      if (item.type === 'application/htg-section') {
+        const body = safeParse(item.data) as
+          | { offerId?: string; sectionKind?: SectionKind; locale?: Locale; platform?: Platform }
+          | null;
+        if (!body || !body.offerId || !body.sectionKind) continue;
+        void handleNativeDropSection(
+          body.offerId,
+          body.sectionKind,
+          body.locale ?? 'en',
+          body.platform ?? 'web',
+          event,
+        );
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
+function safeParse(s: string): unknown {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return null;
+  }
+}
+
+async function handleNativeDropOffer(
+  offerId: string,
+  locale: Locale,
+  platform: Platform,
+  event: DropEvent,
+): Promise<void> {
+  const offer = OFFER_BY_ID[offerId];
+  if (!offer) return;
+  const card = await buildCard(offer, locale, platform);
+  await landAtDropEvent(card, event);
+  emit<InsertedHandler>('INSERTED', {
+    createdNodeIds: [card.id],
+    label: `Dropped "${offer.title}" on the canvas.`,
+    kind: 'dropped',
+  });
+}
+
+async function handleNativeDropMulti(
+  offerIds: string[],
+  locale: Locale,
+  platform: Platform,
+  mode: InsertMode,
+  event: DropEvent,
+): Promise<void> {
+  const offers = offerIds.map((id) => OFFER_BY_ID[id]).filter((o): o is Offer => !!o);
+  if (offers.length === 0) return;
+  const created = await insertCards(offers, mode, 2, locale, platform);
+  if (created.length > 0) {
+    const first = created[0];
+    first.x = event.absoluteX - first.width / 2;
+    first.y = event.absoluteY - first.height / 2;
+  }
+  emit<InsertedHandler>('INSERTED', {
+    createdNodeIds: created.map((n) => n.id),
+    label: `Dropped ${offers.length} properties as a ${mode}.`,
+    kind: 'dropped',
+  });
+}
+
+async function handleNativeDropSection(
+  offerId: string,
+  kind: SectionKind,
+  locale: Locale,
+  platform: Platform,
+  event: DropEvent,
+): Promise<void> {
+  const offer = OFFER_BY_ID[offerId];
+  if (!offer) return;
+  const node = await buildSection(kind, offer, locale, platform);
+  await landAtDropEvent(node, event);
+  emit<InsertedHandler>('INSERTED', {
+    createdNodeIds: [node.id],
+    label: `Dropped "${kind}" for "${offer.title}".`,
+    kind: 'dropped',
+  });
+}
+
+/**
+ * Place a fresh node at the figma.on('drop') event coordinates.
+ * If the drop landed inside a frame, we append as a child relative to
+ * the frame's local coordinates; otherwise we drop on the page using
+ * absoluteX / absoluteY.
+ */
+async function landAtDropEvent(node: SceneNode, event: DropEvent): Promise<void> {
+  if (event.node.type === 'PAGE') {
+    figma.currentPage.appendChild(node);
+    node.x = event.absoluteX - node.width / 2;
+    node.y = event.absoluteY - node.height / 2;
+  } else if ('appendChild' in event.node) {
+    (event.node as ChildrenMixin & SceneNode).appendChild(node);
+    node.x = event.x - node.width / 2;
+    node.y = event.y - node.height / 2;
+  } else {
+    figma.currentPage.appendChild(node);
+    node.x = event.absoluteX - node.width / 2;
+    node.y = event.absoluteY - node.height / 2;
+  }
+  figma.currentPage.selection = [node];
 }
 
 function clampSize(s: UiSize): UiSize {
