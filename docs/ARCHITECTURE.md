@@ -136,8 +136,8 @@ typed in `src/shared/messages.ts` and consumed via `emit/on`:
 | `INSERT` | UI → main | `InsertCardsPayload \| InsertSectionsPayload` | Existing card/section insert |
 | `DROP` | UI → main | `DropPayload` (offerId, coords, replaceOnDrop) | Tile dropped on canvas |
 | `UNDO` | UI → main | `{ nodeIds: string[] }` | Toast Undo button |
-| `FIND_ALL` | UI → main | — | Select every HTG-tagged node on the page |
-| `REFRESH` | UI → main | — | Re-render selected HTG cards |
+| `FIND_ALL` | UI → main | — | Select every HomeDrop-tagged node on the page |
+| `REFRESH` | UI → main | — | Re-render selected HomeDrop cards |
 | `RESIZE` | UI → main | `UiSize` | Live resize while dragging the handle |
 | `SAVE_STATE` | UI → main | `UiState` | Persist UI state to clientStorage |
 | `SAVE_UI_SIZE` | UI → main | `UiSize` | Persist final size on resize commit |

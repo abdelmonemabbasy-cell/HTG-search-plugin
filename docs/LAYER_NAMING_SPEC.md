@@ -135,7 +135,7 @@ clicking Insert:
 
 - Drop on a frame whose children include `#fieldName` layers → those
   layers populate, exactly as if you'd clicked Insert in Single mode.
-- Drop on any other selected frame → the generated HTG card is filled
+- Drop on any other selected frame → the generated HomeDrop card is filled
   in as a child of that frame. The "Drop into 'X'" banner inside the
   plugin lets you toggle **Replace** to clear existing children first.
 - Drop on empty canvas → the card lands at the drop point.

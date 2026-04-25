@@ -5,6 +5,21 @@ Dates are in ISO-8601 (YYYY-MM-DD).
 
 ## [Unreleased]
 
+### 0.8.1 — 2026-04-25 — Rebrand polish + UX cleanup
+
+- Every user-facing "HTG" / "HomeToGo cards" string in main thread
+  notifies + container node names + the ⌘K Find-all command label
+  now reads "HomeDrop". Plugin-data keys (`htgOfferId` etc.) stay
+  unchanged so cards inserted before the rebrand still round-trip.
+- ⭐ Favourites filter chip in FilterBar with a count badge.
+  Disabled with a tooltip when no tiles are starred.
+- Toast moved from `bottom: 16px` to `60px` so it sits clear of the
+  Drop button.
+- DropTargetBanner sub-line now describes what will land
+  ("3 properties will land here as a grid" / "Populate matching
+  #fields with the selected property" / etc.) rather than printing
+  the frame's id fragment.
+
 ### 0.8.0 — 2026-04-25 — Data layer moves to the UI thread (v2-ready)
 
 The catalogue used to load on the main thread (which works for the
