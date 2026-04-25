@@ -208,7 +208,14 @@ export type StringKey =
   | 'uiPresetsTooltip'
   | 'uiPresetsEmpty'
   | 'uiPresetsSaveCurrent'
-  | 'uiPresetDelete';
+  | 'uiPresetDelete'
+  | 'uiFilterFavourites'
+  | 'uiFilterFavouritesEmpty'
+  | 'uiDropBannerSubNone'
+  | 'uiDropBannerSubSingle'
+  | 'uiDropBannerSubList'
+  | 'uiDropBannerSubGrid'
+  | 'uiDropBannerSubPopulate';
 
 export const STRINGS: Record<Locale, Record<StringKey, string>> = {
   en: {
@@ -394,6 +401,13 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPresetsEmpty: 'No presets yet.',
     uiPresetsSaveCurrent: 'Save current settings…',
     uiPresetDelete: 'Delete preset',
+    uiFilterFavourites: 'Favourites ({n})',
+    uiFilterFavouritesEmpty: 'Star a tile to add it to favourites',
+    uiDropBannerSubNone: 'Pick a property below',
+    uiDropBannerSubSingle: 'The selected property will land here',
+    uiDropBannerSubList: '{n} properties will land here as a list',
+    uiDropBannerSubGrid: '{n} properties will land here as a grid',
+    uiDropBannerSubPopulate: 'Populate matching #fields with the selected property',
   },
   de: {
     ratingOutstanding: 'Hervorragend',
@@ -578,6 +592,13 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPresetsEmpty: 'Noch keine Voreinstellungen.',
     uiPresetsSaveCurrent: 'Aktuelle Einstellungen speichern…',
     uiPresetDelete: 'Voreinstellung löschen',
+    uiFilterFavourites: 'Favoriten ({n})',
+    uiFilterFavouritesEmpty: 'Markiere Karten als Favoriten',
+    uiDropBannerSubNone: 'Wähle unten eine Unterkunft',
+    uiDropBannerSubSingle: 'Die ausgewählte Unterkunft landet hier',
+    uiDropBannerSubList: '{n} Unterkünfte landen hier als Liste',
+    uiDropBannerSubGrid: '{n} Unterkünfte landen hier als Raster',
+    uiDropBannerSubPopulate: 'Passende #-Felder mit der Auswahl füllen',
   },
   es: {
     ratingOutstanding: 'Excepcional',
@@ -762,6 +783,13 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPresetsEmpty: 'Aún no hay presets.',
     uiPresetsSaveCurrent: 'Guardar ajustes actuales…',
     uiPresetDelete: 'Eliminar preset',
+    uiFilterFavourites: 'Favoritos ({n})',
+    uiFilterFavouritesEmpty: 'Marca tarjetas como favoritas',
+    uiDropBannerSubNone: 'Elige un alojamiento abajo',
+    uiDropBannerSubSingle: 'El alojamiento seleccionado caerá aquí',
+    uiDropBannerSubList: '{n} alojamientos caerán aquí como lista',
+    uiDropBannerSubGrid: '{n} alojamientos caerán aquí como cuadrícula',
+    uiDropBannerSubPopulate: 'Rellenar los #campos con la selección',
   },
   fr: {
     ratingOutstanding: 'Exceptionnel',
@@ -946,6 +974,13 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPresetsEmpty: 'Aucun préréglage pour le moment.',
     uiPresetsSaveCurrent: 'Enregistrer les réglages actuels…',
     uiPresetDelete: 'Supprimer le préréglage',
+    uiFilterFavourites: 'Favoris ({n})',
+    uiFilterFavouritesEmpty: 'Mettez une fiche en favori',
+    uiDropBannerSubNone: 'Choisissez un logement ci-dessous',
+    uiDropBannerSubSingle: 'Le logement sélectionné atterrira ici',
+    uiDropBannerSubList: '{n} logements atterriront ici en liste',
+    uiDropBannerSubGrid: '{n} logements atterriront ici en grille',
+    uiDropBannerSubPopulate: 'Remplir les champs # avec la sélection',
   },
 };
 

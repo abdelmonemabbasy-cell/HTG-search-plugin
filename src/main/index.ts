@@ -1,6 +1,6 @@
 import { emit, on, showUI } from '@create-figma-plugin/utilities';
-import productsJson from '@data/products.json';
 import type { Offer } from '@shared/types';
+import { defaultOffersSource, type OffersSource } from './offers-source';
 import type {
   DropHandler,
   DropPayload,
@@ -36,10 +36,12 @@ import {
   populateSelection,
 } from './populate';
 
-const OFFERS = productsJson as unknown as Offer[];
-const OFFER_BY_ID: Record<string, Offer> = Object.fromEntries(
-  OFFERS.map((o) => [o.id, o]),
-);
+// Today this is JsonOffersSource; v2 will swap it for an ApiOffersSource
+// without touching the rest of this file.
+const SOURCE: OffersSource = defaultOffersSource;
+let OFFERS: Offer[] = [];
+const OFFER_BY_ID: Record<string, Offer> = {};
+
 const LAYOUT_GAP = 16;
 const UI_STATE_KEY = 'htgUiState';
 const UI_SIZE_KEY = 'htgUiSize';
@@ -48,13 +50,17 @@ const MIN_SIZE: UiSize = { width: 360, height: 480 };
 const MAX_SIZE: UiSize = { width: 900, height: 1200 };
 
 export default async function () {
-  const savedState = (await figma.clientStorage.getAsync(UI_STATE_KEY)) as
-    | UiState
-    | undefined;
-  const savedSize = ((await figma.clientStorage.getAsync(UI_SIZE_KEY)) as
-    | UiSize
-    | undefined) ?? DEFAULT_SIZE;
-  const uiSize = clampSize(savedSize);
+  // Boot order: load offers first so OFFER_BY_ID is populated before
+  // any handler can fire. clientStorage reads happen in parallel.
+  const [loadedOffers, savedState, savedSizeRaw] = await Promise.all([
+    SOURCE.getAll(),
+    figma.clientStorage.getAsync(UI_STATE_KEY) as Promise<UiState | undefined>,
+    figma.clientStorage.getAsync(UI_SIZE_KEY) as Promise<UiSize | undefined>,
+  ]);
+  OFFERS = loadedOffers;
+  for (const o of loadedOffers) OFFER_BY_ID[o.id] = o;
+
+  const uiSize = clampSize(savedSizeRaw ?? DEFAULT_SIZE);
 
   const initialData: LoadedPayload = {
     offers: OFFERS,

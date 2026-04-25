@@ -1521,9 +1521,12 @@
 
 /* ---------- v0.7: Toast ---------- */
 .toastWrap {
+  /* Sit just above the footer (Drop button) so the toast doesn't
+     hover over the CTA. The footer is ~52 px tall (10 px padding +
+     ~32 px button); 60 px lifts the toast clear with an 8 px gap. */
   position: fixed;
   left: 50%;
-  bottom: 16px;
+  bottom: 60px;
   transform: translateX(-50%);
   z-index: 40;
   pointer-events: none;

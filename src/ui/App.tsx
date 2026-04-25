@@ -219,10 +219,11 @@ export function App(props: LoadedPayload) {
       if (filters.minRating && (!o.rating || o.rating.average < filters.minRating)) return false;
       if (filters.priceMax && o.price.perNight > filters.priceMax) return false;
       if (filters.minGuests && o.capacity.guests < filters.minGuests) return false;
+      if (filters.favouritesOnly && !favourites.has(o.id)) return false;
       return true;
     });
     return sortOffers(filtered, sort);
-  }, [localizedOffers, search, filters, sort]);
+  }, [localizedOffers, search, filters, sort, favourites]);
 
   /**
    * Tile-click handler with shift/cmd multi-select.
@@ -731,11 +732,18 @@ export function App(props: LoadedPayload) {
           target={dropTarget}
           replace={replaceOnDrop}
           onReplaceChange={setReplaceOnDrop}
+          selectedCount={selectedIds.size}
+          mode={mode}
           locale={locale}
         />
       )}
       <SearchBar value={search} onChange={setSearch} locale={locale} />
-      <FilterBar filters={filters} onChange={setFilters} locale={locale} />
+      <FilterBar
+        filters={filters}
+        onChange={setFilters}
+        favouritesCount={favourites.size}
+        locale={locale}
+      />
       <SortBar
         count={visible.length}
         total={offers.length}
