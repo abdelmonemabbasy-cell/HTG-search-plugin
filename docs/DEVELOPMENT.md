@@ -43,7 +43,7 @@ When watching, each plugin run picks up the latest bundle — no re-import.
    (`buildImagePanel` / `buildContent` / `buildActions`).
 5. Optional: surface it in the UI (`ProductTile.tsx` for the search-grid
    tile, `DetailView.tsx` for the property-facts panel on Level 2).
-6. Document it in `docs/DATA_MODEL.md` and `docs/LAYER_NAMING_SPEC.md`.
+6. Document it in `docs/DATA_MODEL.md`.
 
 ### Add an amenity icon
 
@@ -126,8 +126,12 @@ rejection surfaces a Retry button.
 - **Auto-layout wrap** (`layoutWrap: 'WRAP'`) requires
   `primaryAxisSizingMode: 'FIXED'` with an explicit width. This is why the
   grid container in `insertCards` resizes before children are appended.
-- **`findOne` is O(n)**. `src/main/populate.ts` uses a single `findAll`.
 - **Don't mutate `.fills` / `.strokes` in place.** Assign a new array.
+- **`BRAND` is an Appearance Proxy.** `src/main/brand.ts` exports
+  `BRAND` as a Proxy that resolves to either the light or dark
+  token set. Call `setBrandAppearance(appearance)` once at the top
+  of any builder; every subsequent `BRAND.*` read picks up the
+  right variant automatically.
 - **QuickJS** lacks some modern JS. `esbuild` targets `es2017` by default; if
   you add code using `structuredClone`, `Array.prototype.findLast`, or other
   recent additions, test it in Figma specifically.
@@ -136,9 +140,11 @@ rejection surfaces a Retry button.
 
 - **Plugin opens blank** → open DevTools on the iframe
   (**Plugins → Development → Open Console**) — usually a missing import.
-- **"Please select an object with children"** style errors → the populate path
-  received a `TEXT` node; we guard against this in
-  `firstTargetInSelection`.
+- **Drop replaces my whole frame instead of dropping inside it** → that's
+  the intended behaviour. Replace mode treats every selected /
+  dropped-on frame as a placeholder. To drop *inside* a frame
+  without replacing it, deselect first and drag onto empty canvas
+  near the frame.
 - **No image appears on the card** → either the image URL is unreachable, or
   its host is not in `allowedDomains`. `loadImageHash` returns `null` silently;
   the rectangle falls back to the surface grey.

@@ -5,6 +5,81 @@ Dates are in ISO-8601 (YYYY-MM-DD).
 
 ## [Unreleased]
 
+### 0.10 — 2026-04-25 — Replace mode + Appearance toggle + native dark mode
+
+#### Drop interaction redesign
+
+- **Replace mode** is now the only frame-selection behaviour. Select a
+  frame on canvas (empty placeholder OR a previously-inserted HomeDrop
+  card) and click Drop / drag a tile → the plugin removes the frame
+  and places the new card at the exact same canvas position,
+  inheriting the parent and the auto-layout index. Drag-onto-frame
+  works the same way.
+- The `#fieldName` populate path is gone. `src/main/populate.ts` and
+  `src/shared/layer-names.ts` are deleted; `populateNode`,
+  `populateSelection`, `firstTargetInSelection`, `hasFieldNames`,
+  `singleFieldNodeInSelection`, and `nativeDropTargetFrame` are all
+  removed. `ToastMessage.kind` no longer carries `'populated'`.
+- New helpers in `src/main/index.ts`: `isReplaceableFrame(node)`,
+  `firstReplaceableFrameInSelection(selection)`,
+  `replaceFrame(placeholder, child)`. The frame's parent + auto-
+  layout index are inherited so the swap works inside list/grid
+  containers.
+- Help-menu's "Populate #fields" card becomes "Replace a frame".
+- `docs/LAYER_NAMING_SPEC.md` is deleted along with the populate path.
+
+#### Appearance toggle
+
+- New `Appearance = 'light' | 'dark'` type in `shared/messages`. A
+  third pill group ("Appearance") in the LocaleBar lets the designer
+  pick light- or dark-variant cards independently of the plugin's
+  own UI Theme.
+- `src/main/brand.ts` now exports `BRAND` as a Proxy that resolves
+  to either `LIGHT_TOKENS` or `DARK_TOKENS`. `setBrandAppearance(a)`
+  swaps the active set; every `BRAND.*` read in generate.ts and the
+  section builders picks up the right value automatically.
+- `setPluginData('htgAppearance', ...)` stamped on every drop so
+  Refresh round-trips the variant.
+
+#### Locale dropdown
+
+- Replace the native `<select>` with a custom Preact dropdown
+  (matches ThemeMenu / PresetsMenu / HelpMenu). Trigger reads "EN
+  English ▾"; open menu shows flag + label + locale code with a
+  check on the active row.
+
+#### Selection model
+
+- Plain tile click now toggles the tile in/out of the selection
+  (mirrors the section grid in DetailView). Cmd / Ctrl-click still
+  toggles additively without moving the anchor; shift-click extends
+  a range.
+- Randomize moves out of the SortBar and into the footer next to
+  the Drop CTA as a 30 × 30 dice icon button.
+
+#### Dark mode
+
+- Re-tuned tokens to match Figma's native dark UI exactly: `#2C2C2C`
+  panel, `#383838` elevated foreground, `#404040` nested surface.
+  Brand purple bumped to `#9b7ef5` for contrast.
+- Three icon-glass buttons (heart, →, checkbox) now use
+  `--htg-icon-btn-bg` + `--htg-icon-btn-color` tokens that flip
+  between translucent-white-on-photo (light) and translucent-black-
+  on-photo (dark) so the glyph stays legible against any image.
+
+#### Plugin icon
+
+- `assets/icon.svg` (HomeToGo wordmark on `#612ACE` brand purple)
+  with PNG exports at 128 / 256 / 512 for the Figma Community
+  thumbnail. `src/ui/index.tsx` injects a small SVG favicon into
+  the iframe head.
+
+#### Drag
+
+- `attachDragImage` and `attachSectionDragImage` calls are wrapped
+  in try/catch so a ghost-element setup failure no longer aborts
+  the drag — the browser falls back to its default tile snapshot.
+
 ### 0.9 — 2026-04-25 — UX redesign
 
 A multi-commit pass that simplified the model, removed dead surfaces,
