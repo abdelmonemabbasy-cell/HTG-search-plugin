@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { emit, on } from '@create-figma-plugin/utilities';
 import type { Offer } from '@shared/types';
 import type {
@@ -31,6 +31,9 @@ import { ProductTile } from './components/ProductTile';
 import { PreviewModal } from './components/PreviewModal';
 import { DetailView } from './components/DetailView';
 import { ResizeHandle } from './components/ResizeHandle';
+import { HoverPeek } from './components/HoverPeek';
+import { NumberTicker } from './components/NumberTicker';
+import { attachDragImage } from './dragImage';
 import { applyTheme } from './theme';
 import styles from './styles.css';
 
@@ -69,6 +72,12 @@ export function App(props: LoadedPayload) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [uiSize, setUiSize] = useState<UiSize>(props.uiSize ?? DEFAULT_SIZE);
+  const [favourites, setFavourites] = useState<Set<string>>(
+    new Set(saved.favourites ?? []),
+  );
+  const [anchorId, setAnchorId] = useState<string | null>(null);
+  const [hoverPeek, setHoverPeek] = useState<{ id: string; rect: DOMRect } | null>(null);
+  const hoverTimerRef = useRef<number | null>(null);
 
   const offers = props.offers;
 
@@ -90,10 +99,11 @@ export function App(props: LoadedPayload) {
         platform,
         filters,
         theme,
+        favourites: Array.from(favourites),
       });
     }, 250);
     return () => clearTimeout(handle);
-  }, [mode, search, sort, gridColumns, locale, platform, filters, theme]);
+  }, [mode, search, sort, gridColumns, locale, platform, filters, theme, favourites]);
 
   const localizedOffers = useMemo(
     () => offers.map((o) => localize(o, locale)),
@@ -116,18 +126,70 @@ export function App(props: LoadedPayload) {
     return sortOffers(filtered, sort);
   }, [localizedOffers, search, filters, sort]);
 
-  const toggle = (id: string) => {
+  /**
+   * Tile-click handler with shift/cmd multi-select.
+   * - single mode: always one-of-N (the modifier keys are no-ops)
+   * - cmd/ctrl + click: toggle id, set anchor to id
+   * - shift + click: select range [anchor, id] in `visible` order
+   * - plain click: toggle id (additive in list/grid)
+   */
+  const toggle = (id: string, e?: MouseEvent) => {
+    if (mode === 'single') {
+      setSelectedIds((prev) => (prev.has(id) ? new Set() : new Set([id])));
+      setAnchorId(id);
+      return;
+    }
+    const shift = !!e && e.shiftKey;
+    const meta = !!e && (e.metaKey || e.ctrlKey);
+
+    if (shift && anchorId) {
+      const ordered = visible.map((o) => o.id);
+      const a = ordered.indexOf(anchorId);
+      const b = ordered.indexOf(id);
+      if (a >= 0 && b >= 0) {
+        const [lo, hi] = a < b ? [a, b] : [b, a];
+        const range = ordered.slice(lo, hi + 1);
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          for (const r of range) next.add(r);
+          return next;
+        });
+        return;
+      }
+    }
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (mode === 'single') {
-        next.clear();
-        if (!prev.has(id)) next.add(id);
-      } else {
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
+    if (!shift) setAnchorId(id);
+    void meta;
+  };
+
+  const toggleFavourite = (id: string) => {
+    setFavourites((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const onTileHoverEnter = (id: string, rect: DOMRect) => {
+    if (hoverTimerRef.current !== null) {
+      window.clearTimeout(hoverTimerRef.current);
+    }
+    hoverTimerRef.current = window.setTimeout(() => {
+      setHoverPeek({ id, rect });
+    }, 450);
+  };
+  const onTileHoverLeave = () => {
+    if (hoverTimerRef.current !== null) {
+      window.clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setHoverPeek(null);
   };
 
   const handleModeChange = (m: InsertMode) => {
@@ -219,6 +281,8 @@ export function App(props: LoadedPayload) {
     if (!e.dataTransfer) return;
     e.dataTransfer.setData('text/plain', offer.id);
     e.dataTransfer.effectAllowed = 'copy';
+    attachDragImage(e, offer, locale);
+    onTileHoverLeave();
   };
 
   const onTileDragEnd = (offer: Offer, e: DragEvent) => {
@@ -444,7 +508,11 @@ export function App(props: LoadedPayload) {
                 key={o.id}
                 offer={o}
                 selected={selectedIds.has(o.id)}
-                onToggle={() => toggle(o.id)}
+                favourite={favourites.has(o.id)}
+                onToggle={(e) => toggle(o.id, e)}
+                onToggleFavourite={() => toggleFavourite(o.id)}
+                onMouseEnter={(rect) => onTileHoverEnter(o.id, rect)}
+                onMouseLeave={onTileHoverLeave}
                 onPreview={() => setPreviewId(o.id)}
                 onOpen={() => openDetail(o.id)}
                 onDragStart={(e) => onTileDragStart(o, e)}
@@ -494,6 +562,11 @@ export function App(props: LoadedPayload) {
         onResize={handleResize}
         onCommit={handleResizeCommit}
       />
+
+      {hoverPeek && (() => {
+        const o = visible.find((x) => x.id === hoverPeek.id);
+        return o ? <HoverPeek offer={o} rect={hoverPeek.rect} locale={locale} /> : null;
+      })()}
     </div>
   );
 }

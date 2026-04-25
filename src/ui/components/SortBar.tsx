@@ -2,6 +2,7 @@ import { h } from 'preact';
 import type { SortKey, InsertMode } from '@shared/messages';
 import type { Locale, StringKey } from '@shared/locales';
 import { t } from '@shared/locales';
+import { NumberTicker } from './NumberTicker';
 import styles from '../styles.css';
 
 interface Props {
@@ -36,9 +37,16 @@ export function SortBar({
   return (
     <div class={styles.sortBar}>
       <span class={styles.sortCount}>
-        {count === total
-          ? t('uiNProperties', locale, { n: total })
-          : t('uiNOfTotal', locale, { n: count, total })}
+        {count === total ? (
+          <span>
+            <NumberTicker value={total} /> {t('uiNProperties', locale, { n: total }).replace(/^\d+\s*/, '')}
+          </span>
+        ) : (
+          <span>
+            <NumberTicker value={count} />{' '}
+            {t('uiNOfTotal', locale, { n: count, total }).replace(/^\d+\s*/, '')}
+          </span>
+        )}
       </span>
       <div class={styles.sortBarRight}>
         {mode === 'grid' && (
