@@ -1,13 +1,17 @@
-import { h } from 'preact';
+import { Fragment, h } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { emit, on } from '@create-figma-plugin/utilities';
 import type { Offer } from '@shared/types';
 import type {
   DropHandler,
   DropPayload,
+  FindAllHandler,
   InsertHandler,
   InsertMode,
+  InsertResultHandler,
+  InsertResultPayload,
   LoadedPayload,
+  Preset,
   RefreshHandler,
   ResizeHandler,
   SaveStateHandler,
@@ -17,6 +21,7 @@ import type {
   ThemeMode,
   UiSize,
   UiState,
+  UndoHandler,
 } from '@shared/messages';
 import type { Locale } from '@shared/locales';
 import { t } from '@shared/locales';
@@ -33,6 +38,9 @@ import { DetailView } from './components/DetailView';
 import { ResizeHandle } from './components/ResizeHandle';
 import { HoverPeek } from './components/HoverPeek';
 import { NumberTicker } from './components/NumberTicker';
+import { Toast } from './components/Toast';
+import { CommandPalette, type PaletteCommand } from './components/CommandPalette';
+import { Confetti } from './components/Confetti';
 import { attachDragImage } from './dragImage';
 import { applyTheme } from './theme';
 import styles from './styles.css';
@@ -79,12 +87,41 @@ export function App(props: LoadedPayload) {
   const [hoverPeek, setHoverPeek] = useState<{ id: string; rect: DOMRect } | null>(null);
   const hoverTimerRef = useRef<number | null>(null);
 
+  // v0.7 chunk 2: toast + palette + presets + confetti
+  const [presets, setPresets] = useState<Preset[]>(saved.presets ?? []);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    nodeIds: string[];
+    seq: number;
+  } | null>(null);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const firstDropFiredRef = useRef(false);
+
   const offers = props.offers;
 
   // Apply theme on mount and whenever it changes.
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  // Listen for INSERT_RESULT from main → show a toast with optional Undo,
+  // and fire a one-shot confetti burst on the very first successful drop
+  // of the current session.
+  useEffect(() => {
+    const off = on<InsertResultHandler>('INSERT_RESULT', (payload: InsertResultPayload) => {
+      setToast({
+        message: payload.label,
+        nodeIds: payload.nodeIds,
+        seq: Date.now(),
+      });
+      if (!firstDropFiredRef.current && payload.kind !== 'populated') {
+        firstDropFiredRef.current = true;
+        setConfettiTrigger((t) => t + 1);
+      }
+    });
+    return () => off();
+  }, []);
 
   // Persist UI state, debounced. clientStorage is on the main thread so
   // we drip the saves rather than firing per keystroke.
@@ -100,10 +137,11 @@ export function App(props: LoadedPayload) {
         filters,
         theme,
         favourites: Array.from(favourites),
+        presets,
       });
     }, 250);
     return () => clearTimeout(handle);
-  }, [mode, search, sort, gridColumns, locale, platform, filters, theme, favourites]);
+  }, [mode, search, sort, gridColumns, locale, platform, filters, theme, favourites, presets]);
 
   const localizedOffers = useMemo(
     () => offers.map((o) => localize(o, locale)),
@@ -318,7 +356,18 @@ export function App(props: LoadedPayload) {
       const inInput =
         document.activeElement &&
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+      // ⌘K / Ctrl+K opens the command palette regardless of focus.
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+        return;
+      }
       if (e.key === 'Escape') {
+        if (paletteOpen) {
+          setPaletteOpen(false);
+          e.preventDefault();
+          return;
+        }
         if (previewId) {
           setPreviewId(null);
           e.preventDefault();
@@ -356,7 +405,7 @@ export function App(props: LoadedPayload) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedIds, previewId, mode, visible, level, selectedSections, detailOfferId]);
+  }, [selectedIds, previewId, mode, visible, level, selectedSections, detailOfferId, paletteOpen]);
 
   const previewOffer = previewId
     ? localizedOffers.find((o) => o.id === previewId)
@@ -379,6 +428,112 @@ export function App(props: LoadedPayload) {
     sort !== 'default' ||
     Object.values(filters).some((v) => v !== undefined);
 
+  const savePreset = () => {
+    const name = window.prompt(t('uiPresetNamePrompt', locale));
+    if (!name || !name.trim()) return;
+    const preset: Preset = {
+      id: `preset-${Date.now()}`,
+      name: name.trim(),
+      mode,
+      platform,
+      locale,
+      gridColumns,
+      sort,
+    };
+    setPresets((p) => [...p, preset]);
+    setToast({
+      message: t('uiPresetSaved', locale, { name: preset.name }),
+      nodeIds: [],
+      seq: Date.now(),
+    });
+  };
+
+  const applyPreset = (p: Preset) => {
+    setMode(p.mode);
+    setPlatform(p.platform);
+    setLocale(p.locale);
+    setGridColumns(p.gridColumns);
+    setSort(p.sort);
+  };
+
+  // Build the palette command list. Order: actions → quick toggles
+  // (mode/platform/locale/theme) → presets.
+  const paletteCommands: PaletteCommand[] = useMemo(() => {
+    const cmds: PaletteCommand[] = [
+      {
+        id: 'random',
+        label: t('uiPaletteRandom', locale),
+        hint: 'R',
+        run: randomize,
+      },
+      {
+        id: 'refresh',
+        label: t('uiPaletteRefresh', locale),
+        run: () => emit<RefreshHandler>('REFRESH'),
+      },
+      {
+        id: 'find-all',
+        label: t('uiPaletteFindAll', locale),
+        run: () => emit<FindAllHandler>('FIND_ALL'),
+      },
+      {
+        id: 'drop',
+        label: t('uiPaletteDrop', locale),
+        run: () => insert(),
+      },
+      {
+        id: 'save-preset',
+        label: t('uiPaletteSavePreset', locale),
+        run: savePreset,
+      },
+    ];
+
+    const modes: InsertMode[] = ['single', 'list', 'grid'];
+    for (const m of modes) {
+      cmds.push({
+        id: `mode-${m}`,
+        label: t('uiPaletteSetMode', locale, {
+          value: t(modeLabelKey(m), locale),
+        }),
+        run: () => handleModeChange(m),
+      });
+    }
+    const platforms: Platform[] = ['web', 'ios', 'android'];
+    for (const p of platforms) {
+      cmds.push({
+        id: `platform-${p}`,
+        label: t('uiPaletteSetPlatform', locale, { value: p }),
+        run: () => setPlatform(p),
+      });
+    }
+    const locales: Locale[] = ['en', 'de', 'es', 'fr'];
+    for (const l of locales) {
+      cmds.push({
+        id: `locale-${l}`,
+        label: t('uiPaletteSetLocale', locale, { value: l.toUpperCase() }),
+        run: () => setLocale(l),
+      });
+    }
+    const themes: ThemeMode[] = ['auto', 'light', 'dark'];
+    for (const th of themes) {
+      cmds.push({
+        id: `theme-${th}`,
+        label: t('uiPaletteSetTheme', locale, {
+          value: t(themeLabelKey(th), locale),
+        }),
+        run: () => setTheme(th),
+      });
+    }
+    for (const p of presets) {
+      cmds.push({
+        id: `preset-${p.id}`,
+        label: t('uiPaletteApplyPreset', locale, { value: p.name }),
+        run: () => applyPreset(p),
+      });
+    }
+    return cmds;
+  }, [locale, presets, mode, platform, gridColumns, sort, theme, visible]);
+
   const headerProps = {
     mode,
     onModeChange: handleModeChange,
@@ -388,6 +543,34 @@ export function App(props: LoadedPayload) {
     onThemeChange: setTheme,
     locale,
   };
+
+  const overlays = (
+    <Fragment>
+      {toast && (
+        <Toast
+          key={toast.seq}
+          message={toast.message}
+          locale={locale}
+          onDismiss={() => setToast(null)}
+          onUndo={
+            toast.nodeIds.length > 0
+              ? () => {
+                  emit<UndoHandler>('UNDO', { nodeIds: toast.nodeIds });
+                  setToast(null);
+                }
+              : undefined
+          }
+        />
+      )}
+      <CommandPalette
+        open={paletteOpen}
+        commands={paletteCommands}
+        onClose={() => setPaletteOpen(false)}
+        locale={locale}
+      />
+      <Confetti trigger={confettiTrigger} />
+    </Fragment>
+  );
 
   if (level === 'detail' && detailOffer) {
     return (
@@ -435,6 +618,7 @@ export function App(props: LoadedPayload) {
           onResize={handleResize}
           onCommit={handleResizeCommit}
         />
+        {overlays}
       </div>
     );
   }
@@ -567,6 +751,8 @@ export function App(props: LoadedPayload) {
         const o = visible.find((x) => x.id === hoverPeek.id);
         return o ? <HoverPeek offer={o} rect={hoverPeek.rect} locale={locale} /> : null;
       })()}
+
+      {overlays}
     </div>
   );
 }
@@ -575,6 +761,18 @@ function hintFor(mode: InsertMode, locale: Locale): string {
   if (mode === 'single') return t('uiHintClickSingle', locale);
   if (mode === 'list') return t('uiHintPickList', locale);
   return t('uiHintPickGrid', locale);
+}
+
+function modeLabelKey(m: InsertMode): 'uiModeSingle' | 'uiModeList' | 'uiModeGrid' {
+  if (m === 'single') return 'uiModeSingle';
+  if (m === 'list') return 'uiModeList';
+  return 'uiModeGrid';
+}
+
+function themeLabelKey(th: ThemeMode): 'uiThemeAuto' | 'uiThemeLight' | 'uiThemeDark' {
+  if (th === 'light') return 'uiThemeLight';
+  if (th === 'dark') return 'uiThemeDark';
+  return 'uiThemeAuto';
 }
 
 function sectionHasData(kind: SectionKind, offer: Offer | undefined): boolean {
