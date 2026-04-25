@@ -39,6 +39,7 @@ export interface UiPreset {
   multiLayout: MultiLayout;
   platform: Platform;
   locale: Locale;
+  appearance: Appearance;
   gridColumns: number;
   sort: SortKey;
 }

@@ -543,6 +543,7 @@ export function App(props: LoadedPayload) {
       multiLayout,
       platform,
       locale,
+      appearance,
       gridColumns,
       sort,
     };
@@ -558,6 +559,7 @@ export function App(props: LoadedPayload) {
     setMultiLayout(p.multiLayout);
     setPlatform(p.platform);
     setLocale(p.locale);
+    if (p.appearance) setAppearance(p.appearance);
     setGridColumns(p.gridColumns);
     setSort(p.sort);
   };
@@ -639,13 +641,14 @@ export function App(props: LoadedPayload) {
     setPresets((all) => all.filter((p) => p.id !== id));
 
   // Build a smart default preset name from the live settings so the
-  // user can usually just press Enter ("Web · EN · 3 cols").
+  // user can usually just press Enter ("Web · EN · Light · 3 cols").
   const platformLabel = (() => {
     const map: Record<Platform, string> = { web: 'Web', ios: 'iOS', android: 'Android' };
     return map[platform];
   })();
+  const appearanceLabel = appearance === 'dark' ? 'Dark' : 'Light';
   const layoutLabel = multiLayout === 'grid' ? `${gridColumns} cols` : 'list';
-  const presetDefaultName = `${platformLabel} · ${locale.toUpperCase()} · ${layoutLabel}`;
+  const presetDefaultName = `${platformLabel} · ${locale.toUpperCase()} · ${appearanceLabel} · ${layoutLabel}`;
 
   const headerProps = {
     onRefresh: () => emit<RefreshHandler>('REFRESH'),
