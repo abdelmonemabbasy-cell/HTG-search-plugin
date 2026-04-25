@@ -139,7 +139,7 @@ export interface ToastMessage {
   /** Short user-facing label, e.g. "Dropped 3 properties as a list". */
   label: string;
   /** Verb hint for analytics + UI styling. */
-  kind: 'inserted' | 'populated' | 'dropped';
+  kind: 'inserted' | 'dropped';
 }
 
 // =============================================================================

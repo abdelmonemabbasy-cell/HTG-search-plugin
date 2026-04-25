@@ -197,8 +197,8 @@ export type StringKey =
   | 'uiHelpDropBody'
   | 'uiHelpDragTitle'
   | 'uiHelpDragBody'
-  | 'uiHelpPopulateTitle'
-  | 'uiHelpPopulateBody'
+  | 'uiHelpReplaceTitle'
+  | 'uiHelpReplaceBody'
   | 'uiHelpPaletteTitle'
   | 'uiHelpPaletteBody'
   | 'uiHelpMultiTitle'
@@ -387,8 +387,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHelpDropBody: 'Pick a property and click the Drop button — it lands at the canvas centre.',
     uiHelpDragTitle: 'Drag onto canvas',
     uiHelpDragBody: 'Grab any tile and drag it onto the canvas to drop a card at the cursor.',
-    uiHelpPopulateTitle: 'Populate #fields',
-    uiHelpPopulateBody: 'Select a single text/shape named #title, #image, #pricePerNight (or a frame containing them) and drop — the plugin fills it in place.',
+    uiHelpReplaceTitle: 'Replace a frame',
+    uiHelpReplaceBody: 'Select an empty placeholder frame (or an existing HomeDrop card) and click Drop to swap it for the new property at the same canvas position. Same trick works on drag.',
     uiHelpPaletteTitle: 'Command palette',
     uiHelpPaletteBody: 'Open with ⌘K (Ctrl+K). Switch mode, platform, locale, theme, presets — or run Drop / Random / Refresh / Find all.',
     uiHelpMultiTitle: 'Multi-select',
@@ -576,8 +576,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHelpDropBody: 'Unterkunft wählen und auf Ablegen klicken — die Karte landet in der Canvas-Mitte.',
     uiHelpDragTitle: 'Auf Canvas ziehen',
     uiHelpDragBody: 'Beliebiges Feld greifen und auf das Canvas ziehen, um eine Karte am Cursor abzulegen.',
-    uiHelpPopulateTitle: '#fields füllen',
-    uiHelpPopulateBody: 'Eine Text-/Form-Ebene namens #title, #image, #pricePerNight (oder einen Frame mit solchen) markieren und ablegen — der Plugin füllt sie an Ort und Stelle.',
+    uiHelpReplaceTitle: 'Frame ersetzen',
+    uiHelpReplaceBody: 'Einen leeren Platzhalter-Frame (oder eine vorhandene HomeDrop-Karte) markieren und auf Ablegen klicken — sie wird an derselben Stelle durch die neue Unterkunft ersetzt. Funktioniert auch per Drag.',
     uiHelpPaletteTitle: 'Befehlspalette',
     uiHelpPaletteBody: 'Mit ⌘K (Strg+K) öffnen. Modus, Plattform, Sprache, Theme, Presets wechseln — oder Drop / Zufall / Aktualisieren / Alle finden.',
     uiHelpMultiTitle: 'Mehrfachauswahl',
@@ -765,8 +765,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHelpDropBody: 'Selecciona una propiedad y pulsa Soltar — aparece en el centro del lienzo.',
     uiHelpDragTitle: 'Arrastrar al lienzo',
     uiHelpDragBody: 'Arrastra cualquier tarjeta al lienzo para soltarla bajo el cursor.',
-    uiHelpPopulateTitle: 'Rellenar #fields',
-    uiHelpPopulateBody: 'Selecciona una capa de texto/forma llamada #title, #image, #pricePerNight (o un frame con ellas) y suelta — el plugin la rellena.',
+    uiHelpReplaceTitle: 'Reemplazar un frame',
+    uiHelpReplaceBody: 'Selecciona un frame de marcador (o una tarjeta HomeDrop existente) y pulsa Soltar — se cambia por la nueva propiedad en la misma posición. También funciona arrastrando.',
     uiHelpPaletteTitle: 'Paleta de comandos',
     uiHelpPaletteBody: 'Abre con ⌘K (Ctrl+K). Cambia modo, plataforma, idioma, tema, presets — o ejecuta Soltar / Aleatorio / Actualizar / Buscar todo.',
     uiHelpMultiTitle: 'Selección múltiple',
@@ -954,8 +954,8 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiHelpDropBody: 'Choisissez une propriété et cliquez sur Déposer — elle atterrit au centre du canevas.',
     uiHelpDragTitle: 'Glisser sur le canevas',
     uiHelpDragBody: 'Saisissez une carte et glissez-la sur le canevas pour déposer une fiche au curseur.',
-    uiHelpPopulateTitle: 'Remplir les #fields',
-    uiHelpPopulateBody: 'Sélectionnez un calque texte/forme nommé #title, #image, #pricePerNight (ou un frame contenant ces calques) et déposez — le plugin remplit sur place.',
+    uiHelpReplaceTitle: 'Remplacer un frame',
+    uiHelpReplaceBody: 'Sélectionnez un frame placeholder (ou une fiche HomeDrop existante) et cliquez sur Déposer — il est remplacé par la nouvelle propriété au même endroit. Fonctionne aussi en glisser-déposer.',
     uiHelpPaletteTitle: 'Palette de commandes',
     uiHelpPaletteBody: 'Ouvrez avec ⌘K (Ctrl+K). Changez de mode, plateforme, langue, thème, preset — ou lancez Déposer / Aléatoire / Actualiser / Tout trouver.',
     uiHelpMultiTitle: 'Sélection multiple',

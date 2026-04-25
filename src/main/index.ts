@@ -26,13 +26,58 @@ import type { Platform } from '@shared/platforms';
 import { PLATFORM_SPEC } from '@shared/platforms';
 import { buildCard } from './generate';
 import { buildSection } from './sections';
-import {
-  firstTargetInSelection,
-  hasFieldNames,
-  populateNode,
-  populateSelection,
-  singleFieldNodeInSelection,
-} from './populate';
+
+/**
+ * "Replace mode" — when a designer has a frame selected on canvas
+ * and clicks Drop (or drags onto it), we want the dropped card to
+ * land at that frame's exact position and remove the original. The
+ * frame is treated as a positioning placeholder. We skip HomeDrop's
+ * own inserted cards (recognised by their htgOfferId plugin-data).
+ */
+type ReplaceableFrame = FrameNode | ComponentNode | InstanceNode;
+
+function isReplaceableFrame(node: SceneNode | undefined | null): node is ReplaceableFrame {
+  if (!node) return false;
+  if (node.type !== 'FRAME' && node.type !== 'COMPONENT' && node.type !== 'INSTANCE') {
+    return false;
+  }
+  // Existing HomeDrop cards (those carrying htgOfferId plugin-data)
+  // are intentionally replaceable too — swapping an old property card
+  // with a new one is one of the main reasons to use this feature.
+  return true;
+}
+
+function firstReplaceableFrameInSelection(
+  selection: readonly SceneNode[],
+): ReplaceableFrame | null {
+  for (const node of selection) {
+    if (isReplaceableFrame(node)) return node;
+  }
+  return null;
+}
+
+/** Drop `child` at the position the placeholder frame currently sits in,
+ *  then remove the placeholder. Inherits the placeholder's parent +
+ *  index so the card slots into auto-layout containers correctly. */
+function replaceFrame(placeholder: ReplaceableFrame, child: SceneNode): void {
+  const parent = placeholder.parent;
+  if (!parent || !('appendChild' in parent)) {
+    figma.currentPage.appendChild(child);
+    child.x = placeholder.x;
+    child.y = placeholder.y;
+    placeholder.remove();
+    return;
+  }
+  const idx = 'children' in parent ? (parent as ChildrenMixin).children.indexOf(placeholder) : -1;
+  if (idx >= 0 && 'insertChild' in parent) {
+    (parent as ChildrenMixin & { insertChild(i: number, c: SceneNode): void }).insertChild(idx, child);
+  } else {
+    (parent as ChildrenMixin & SceneNode).appendChild(child);
+  }
+  child.x = placeholder.x;
+  child.y = placeholder.y;
+  placeholder.remove();
+}
 
 // Catalogue cache. Populated by the UI via SYNC_OFFERS on every
 // successful fetch (initial load + on locale change). Refresh / DROP /
@@ -252,59 +297,29 @@ async function handleNativeDropOffer(
   const offer = OFFER_BY_ID[offerId];
   if (!offer) return;
 
-  // Dropped directly onto a #field-named text/shape: fill that one node.
-  const targetNode = event.node as SceneNode;
-  if (
-    targetNode &&
-    targetNode.name?.startsWith('#') &&
-    (targetNode.type === 'TEXT' ||
-      targetNode.type === 'RECTANGLE' ||
-      targetNode.type === 'ELLIPSE')
-  ) {
-    const ok = await populateNode(targetNode, offer, locale);
-    if (ok) {
-      const label = `Filled "${targetNode.name.replace(/^#/, '')}"`;
-      figma.notify(label);
-      emit<InsertedHandler>('INSERTED', {
-        createdNodeIds: [],
-        label,
-        kind: 'populated',
-      });
-      return;
-    }
-  }
-
-  // Dropped onto a frame with #field descendants: fill them all.
-  const dropTarget = nativeDropTargetFrame(event);
-  if (dropTarget && hasFieldNames(dropTarget)) {
-    const filled = await populateSelection(dropTarget, offer, locale);
-    if (filled > 0) {
-      const label = filled === 1 ? 'Filled 1 field' : `Filled ${filled} fields`;
-      figma.notify(label);
-      emit<InsertedHandler>('INSERTED', {
-        createdNodeIds: [],
-        label,
-        kind: 'populated',
-      });
-      return;
-    }
-  }
-
   const card = await buildCard(offer, locale, platform, appearance);
+
+  // Dropped onto a frame (any frame, including a previously-inserted
+  // HomeDrop card) → replace mode: swap the frame for the new card at
+  // the same canvas position, inheriting the parent + index.
+  const placeholder = isReplaceableFrame(event.node as SceneNode) ? (event.node as ReplaceableFrame) : null;
+  if (placeholder) {
+    replaceFrame(placeholder, card);
+    figma.currentPage.selection = [card];
+    emit<InsertedHandler>('INSERTED', {
+      createdNodeIds: [card.id],
+      label: 'Card dropped',
+      kind: 'dropped',
+    });
+    return;
+  }
+
   await landAtDropEvent(card, event);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: [card.id],
     label: 'Card dropped',
     kind: 'dropped',
   });
-}
-
-function nativeDropTargetFrame(event: DropEvent): FrameNode | null {
-  const n = event.node;
-  if (n.type === 'FRAME' || n.type === 'COMPONENT' || n.type === 'INSTANCE') {
-    return n as FrameNode;
-  }
-  return null;
 }
 
 async function handleNativeDropMulti(
@@ -413,40 +428,26 @@ async function insertLevel1(payload: InsertCardsPayload): Promise<void> {
   const { offers, mode, gridColumns, locale, platform, appearance } = payload;
   if (offers.length === 0) return;
 
-  // Single-card single-offer with a populate-eligible selection routes
-  // through the populate path instead of dropping a new card. We support
-  // two shapes: a single #field text/shape layer (fill that one), or a
-  // frame whose descendants include #field layers (fill them all).
+  // Replace mode — single-card single-offer with a frame selected:
+  // swap the frame for the new card at its current canvas position
+  // (same parent, same index in the auto-layout container if any).
+  // Works on plain placeholder frames AND previously-inserted HomeDrop
+  // cards, so designers can swap an existing card with a different
+  // property without having to delete + re-drop.
   if (mode === 'single' && offers.length === 1) {
-    const sel = figma.currentPage.selection;
-    const single = singleFieldNodeInSelection(sel);
-    if (single) {
-      const ok = await populateNode(single, offers[0], locale);
-      if (ok) {
-        const label = `Filled "${single.name.replace(/^#/, '')}"`;
-        figma.notify(label);
-        emit<InsertedHandler>('INSERTED', {
-          createdNodeIds: [],
-          label,
-          kind: 'populated',
-        });
-        return;
-      }
-    }
-    const target = firstTargetInSelection(sel);
-    if (target) {
-      const filled = await populateSelection(target, offers[0], locale);
-      if (filled > 0) {
-        const label = filled === 1 ? 'Filled 1 field' : `Filled ${filled} fields`;
-        figma.notify(label);
-        emit<InsertedHandler>('INSERTED', {
-          createdNodeIds: [],
-          label,
-          kind: 'populated',
-        });
-        return;
-      }
-      figma.notify('No #fields found — dropped a card instead');
+    const placeholder = firstReplaceableFrameInSelection(figma.currentPage.selection);
+    if (placeholder) {
+      const card = await buildCard(offers[0], locale, platform, appearance);
+      replaceFrame(placeholder, card);
+      figma.currentPage.selection = [card];
+      figma.viewport.scrollAndZoomIntoView([card]);
+      figma.notify('Card replaced');
+      emit<InsertedHandler>('INSERTED', {
+        createdNodeIds: [card.id],
+        label: 'Card replaced',
+        kind: 'dropped',
+      });
+      return;
     }
   }
 
