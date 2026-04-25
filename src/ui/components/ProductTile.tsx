@@ -73,8 +73,10 @@ export function ProductTile({
           title={t(favourite ? 'uiFavouriteRemove' : 'uiFavouriteAdd', locale)}
           aria-pressed={favourite}
         >
-          <span key={bounceKey} class={styles.tileFavStar}>
-            {favourite ? '★' : '☆'}
+          <span key={bounceKey} class={styles.tileFavStar} aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={favourite ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21l8.84-8.61a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
           </span>
         </button>
         <div class={styles.tileHoverActions}>

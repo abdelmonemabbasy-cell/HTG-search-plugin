@@ -9,6 +9,7 @@ declare const styles: {
   readonly "bulkBarText": string;
   readonly "chip": string;
   readonly "chipActive": string;
+  readonly "chipFavourites": string;
   readonly "colStepper": string;
   readonly "colStepperBtn": string;
   readonly "colStepperBtnActive": string;

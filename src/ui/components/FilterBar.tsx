@@ -38,7 +38,7 @@ export function FilterBar({ filters, onChange, favouritesCount, locale }: Props)
         {t('uiFilterAll', locale)}
       </button>
       <button
-        class={`${styles.chip} ${filters.favouritesOnly ? styles.chipActive : ''}`}
+        class={`${styles.chip} ${styles.chipFavourites} ${filters.favouritesOnly ? styles.chipActive : ''}`}
         onClick={() => toggle('favouritesOnly', filters.favouritesOnly ? undefined : true)}
         disabled={favouritesCount === 0}
         title={
@@ -47,7 +47,10 @@ export function FilterBar({ filters, onChange, favouritesCount, locale }: Props)
             : t('uiFilterFavourites', locale, { n: favouritesCount })
         }
       >
-        ★ {t('uiFilterFavourites', locale, { n: favouritesCount })}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21l8.84-8.61a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+        {t('uiFilterFavourites', locale, { n: favouritesCount })}
       </button>
       <button
         class={`${styles.chip} ${filters.priceMax === 150 ? styles.chipActive : ''}`}

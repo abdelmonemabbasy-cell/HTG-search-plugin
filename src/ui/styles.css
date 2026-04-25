@@ -391,6 +391,20 @@
   border-color: var(--htg-border-strong);
 }
 
+.chipFavourites {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chipFavourites svg {
+  color: var(--htg-coral);
+}
+
+.chipFavourites.chipActive svg {
+  color: #ffffff;
+}
+
 .chipActive {
   background: var(--htg-text);
   border-color: var(--htg-text);
