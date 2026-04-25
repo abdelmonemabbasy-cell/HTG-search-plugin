@@ -173,35 +173,26 @@ noise.
 
 ---
 
-## Populate spec (the design-system seam)
+## Replace mode (swap a placeholder, swap an existing card)
 
-Name a layer with a `#` prefix matching one of the keys below and the
-plugin will fill it in place — either via the Drop CTA in single-card
-mode or by dragging a tile / the detail hero directly onto your layer
-or frame.
+Got an empty placeholder frame in your mockup where the property card
+should sit? Or an existing HomeDrop card you want to swap for a
+different property?
 
-| Layer name | Gets set to |
-|------------|-------------|
-| `#title` | Offer title |
-| `#pricePerNight` | `€128` |
-| `#priceOriginal` | `€151` (strikethrough-ready) |
-| `#discountLabel` | `Last-minute deal: -15%` |
-| `#ratingAverage` | `4.7` |
-| `#ratingCount` | `(284 reviews)` |
-| `#location` | `3.4 km to center · Berlin Prenzlauer Berg` |
-| `#providerLine` | `Promoted by Vrbo` |
-| `#image` | Hero image as an image fill |
-| `#imageSecondary` | Second image |
+**Select the frame and click Drop** (or drag a tile onto it) — the
+plugin removes the frame and places the new card at exactly the same
+canvas position, inheriting the parent and the auto-layout index. So
+it slots back into its container without you having to re-arrange
+anything. Works on:
 
-Full spec in [`docs/LAYER_NAMING_SPEC.md`](docs/LAYER_NAMING_SPEC.md).
-Match is case- and separator-insensitive (`#PricePerNight` =
-`#price_per_night` = `#price-per-night`).
+- **Empty placeholder frames** designers use as positioning slots.
+- **Previously-inserted HomeDrop cards** — pick a different property
+  while a card is selected and the new one slides into the same spot.
 
-A single selected `#field` text/shape fills that one node. A frame
-with `#field` descendants fills them all. So you can either build a
-fully-named card component once and let HomeDrop populate the whole
-thing, or keep ad-hoc text layers in your existing mockups and fill
-them one-by-one.
+Looking forward to v2 with the HomeToGo design system: when the
+component itself carries the data fields as named layers, this same
+replace flow becomes the path for filling the system component too.
+For now the simple swap is what the workflow needs.
 
 ---
 
