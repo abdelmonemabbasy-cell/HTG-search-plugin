@@ -12,7 +12,6 @@ interface Props {
   /** When true, render a brief outline pulse (canvas selection echo). */
   pulse?: boolean;
   onToggle: (e: MouseEvent) => void;
-  onPreview: () => void;
   onOpen: () => void;
   onToggleFavourite: () => void;
   onMouseEnter?: (rect: DOMRect) => void;
@@ -28,7 +27,6 @@ export function ProductTile({
   favourite,
   pulse,
   onToggle,
-  onPreview,
   onOpen,
   onToggleFavourite,
   onMouseEnter,
@@ -80,16 +78,6 @@ export function ProductTile({
         </button>
         {selected && <span class={styles.tileCheck}>✓</span>}
         <div class={styles.tileHoverActions}>
-          <button
-            class={styles.tileHoverBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              onPreview();
-            }}
-            title={t('uiPreviewTooltip', locale)}
-          >
-            i
-          </button>
           <button
             class={styles.tileHoverBtn}
             onClick={(e) => {

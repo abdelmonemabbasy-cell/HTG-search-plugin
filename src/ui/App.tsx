@@ -35,7 +35,6 @@ import { FilterBar, type Filters } from './components/FilterBar';
 import { SortBar } from './components/SortBar';
 import { LocaleBar } from './components/LocaleBar';
 import { ProductTile } from './components/ProductTile';
-import { PreviewModal } from './components/PreviewModal';
 import { DetailView } from './components/DetailView';
 import { ResizeHandle } from './components/ResizeHandle';
 import { HoverPeek } from './components/HoverPeek';
@@ -81,7 +80,6 @@ export function App(props: LoadedPayload) {
   const [filters, setFilters] = useState<Filters>(saved.filters);
   const [theme, setTheme] = useState<Theme>(saved.theme ?? 'auto');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [previewId, setPreviewId] = useState<string | null>(null);
   const [uiSize, setUiSize] = useState<UiSize>(props.uiSize ?? DEFAULT_SIZE);
   const [favourites, setFavourites] = useState<Set<string>>(
     new Set(saved.favourites ?? []),
@@ -257,7 +255,7 @@ export function App(props: LoadedPayload) {
   // Filtering / sorting / localization moved into OffersSource.search
   // — `offers` is already the visible list. The local catalogue
   // (`offers` state) is what the source returned for the current
-  // query. Keep a fast id → offer lookup for previewId / detailOfferId.
+  // query. Keep a fast id → offer lookup for detailOfferId.
   const visible = offers;
   const offersById = useMemo(() => {
     const m = new Map<string, Offer>();
@@ -491,10 +489,7 @@ export function App(props: LoadedPayload) {
           e.preventDefault();
           return;
         }
-        if (previewId) {
-          setPreviewId(null);
-          e.preventDefault();
-        } else if (level === 'detail') {
+        if (level === 'detail') {
           backToSearch();
           e.preventDefault();
         } else if (selectedIds.size > 0) {
@@ -528,9 +523,8 @@ export function App(props: LoadedPayload) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedIds, previewId, mode, visible, level, selectedSections, detailOfferId, paletteOpen]);
+  }, [selectedIds, mode, visible, level, selectedSections, detailOfferId, paletteOpen]);
 
-  const previewOffer = previewId ? offersById.get(previewId) ?? null : null;
   const detailOffer = detailOfferId ? offersById.get(detailOfferId) ?? null : null;
   const count = selectedIds.size;
 
@@ -881,7 +875,6 @@ export function App(props: LoadedPayload) {
                 onToggleFavourite={() => toggleFavourite(o.id)}
                 onMouseEnter={(rect) => onTileHoverEnter(o.id, rect)}
                 onMouseLeave={onTileHoverLeave}
-                onPreview={() => setPreviewId(o.id)}
                 onOpen={() => openDetail(o.id)}
                 onDragStart={(e) => onTileDragStart(o, e)}
                 onDragEnd={(e) => onTileDragEnd(o, e)}
@@ -906,23 +899,6 @@ export function App(props: LoadedPayload) {
           {insertLabel()}
         </button>
       </div>
-
-      {previewOffer && (
-        <PreviewModal
-          offer={previewOffer}
-          onClose={() => setPreviewId(null)}
-          onInsert={() => {
-            insert(previewOffer);
-            setPreviewId(null);
-          }}
-          onOpenDetail={() => {
-            setPreviewId(null);
-            openDetail(previewOffer.id);
-          }}
-          onDragStart={(e) => onTileDragStart(previewOffer, e)}
-          locale={locale}
-        />
-      )}
 
       <ResizeHandle
         size={uiSize}

@@ -4,6 +4,7 @@ import type { SectionKind } from '@shared/messages';
 import { SECTION_KINDS } from '@shared/messages';
 import type { Locale, StringKey } from '@shared/locales';
 import { t } from '@shared/locales';
+import { formatPrice } from '@shared/format';
 import styles from '../styles.css';
 
 const SECTION_ICONS: Record<SectionKind, JSX.Element> = {
@@ -156,6 +157,56 @@ export function DetailView({
         </div>
       </div>
 
+      <div class={styles.detailFacts}>
+        <div class={styles.detailFactsRow}>
+          <Stat value={String(offer.capacity.guests)} label={t('uiLabelGuests', locale)} />
+          <Stat value={String(offer.capacity.bedrooms)} label={t('uiLabelBedrooms', locale)} />
+          <Stat value={String(offer.capacity.bathrooms)} label={t('uiLabelBaths', locale)} />
+          <Stat
+            value={offer.rating ? offer.rating.average.toFixed(1) : '—'}
+            label={
+              offer.rating
+                ? t('uiNReviewsShort', locale, { n: offer.rating.count })
+                : t('uiNewShort', locale)
+            }
+          />
+        </div>
+
+        {offer.shortDescription && (
+          <p class={styles.detailDescription}>{offer.shortDescription}</p>
+        )}
+
+        {offer.amenities.length > 0 && (
+          <div class={styles.detailAmenities}>
+            {offer.amenities.slice(0, 8).map((a) => (
+              <span key={a} class={styles.detailAmenityChip}>
+                {a.replace(/_/g, ' ')}
+              </span>
+            ))}
+            {offer.amenities.length > 8 && (
+              <span class={styles.detailAmenityChipMore}>
+                +{offer.amenities.length - 8}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div class={styles.detailPriceRow}>
+          {offer.discount && (
+            <span class={styles.detailPriceOriginal}>
+              {formatPrice(offer.discount.originalPerNight, offer.price.currency, locale)}
+            </span>
+          )}
+          <span class={styles.detailPrice}>
+            {formatPrice(offer.price.perNight, offer.price.currency, locale)}
+          </span>
+          <span class={styles.detailPriceSuffix}>{t('uiPerNightSlash', locale)}</span>
+          <span class={styles.detailPriceMeta}>
+            · {t('uiByProvider', locale, { name: offer.provider.name })}
+          </span>
+        </div>
+      </div>
+
       <div class={styles.detailSectionActions}>
         <span class={styles.detailSectionHeading}>{t('uiSectionsToInsert', locale)}</span>
         <div class={styles.detailSectionActionsBtns}>
@@ -205,6 +256,15 @@ export function DetailView({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div class={styles.detailStat}>
+      <div class={styles.detailStatValue}>{value}</div>
+      <div class={styles.detailStatLabel}>{label}</div>
     </div>
   );
 }

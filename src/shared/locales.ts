@@ -168,7 +168,6 @@ export type StringKey =
   | 'uiPerNightSlash'
   | 'uiOpenDetails'
   | 'uiInsertCard'
-  | 'uiPreviewTooltip'
   // v0.6 / v0.7 chrome
   | 'uiRandomize'
   | 'uiRandomizeTooltip'
@@ -378,7 +377,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPerNightSlash: '/ night',
     uiOpenDetails: 'Open details →',
     uiInsertCard: 'Drop card',
-    uiPreviewTooltip: 'Preview details',
     uiRandomize: 'Randomize',
     uiRandomizeTooltip: 'Pick a random property (R)',
     uiThemeAuto: 'Auto',
@@ -586,7 +584,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPerNightSlash: '/ Nacht',
     uiOpenDetails: 'Details öffnen →',
     uiInsertCard: 'Karte ablegen',
-    uiPreviewTooltip: 'Details ansehen',
     uiRandomize: 'Zufall',
     uiRandomizeTooltip: 'Zufällige Unterkunft wählen (R)',
     uiThemeAuto: 'Auto',
@@ -794,7 +791,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPerNightSlash: '/ noche',
     uiOpenDetails: 'Abrir detalles →',
     uiInsertCard: 'Soltar tarjeta',
-    uiPreviewTooltip: 'Vista previa',
     uiRandomize: 'Aleatorio',
     uiRandomizeTooltip: 'Elegir alojamiento al azar (R)',
     uiThemeAuto: 'Auto',
@@ -1002,7 +998,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPerNightSlash: '/ nuit',
     uiOpenDetails: 'Voir les détails →',
     uiInsertCard: 'Déposer la fiche',
-    uiPreviewTooltip: 'Aperçu',
     uiRandomize: 'Aléatoire',
     uiRandomizeTooltip: 'Choisir un logement au hasard (R)',
     uiThemeAuto: 'Auto',
