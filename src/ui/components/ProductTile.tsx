@@ -14,10 +14,7 @@ interface Props {
   onToggle: (e: MouseEvent) => void;
   onOpen: () => void;
   onToggleFavourite: () => void;
-  onMouseEnter?: (rect: DOMRect) => void;
-  onMouseLeave?: () => void;
   onDragStart?: (e: DragEvent) => void;
-  onDragEnd?: (e: DragEvent) => void;
   locale: Locale;
 }
 
@@ -29,10 +26,7 @@ export function ProductTile({
   onToggle,
   onOpen,
   onToggleFavourite,
-  onMouseEnter,
-  onMouseLeave,
   onDragStart,
-  onDragEnd,
   locale,
 }: Props) {
   const badge = offer.badges[0];
@@ -45,13 +39,6 @@ export function ProductTile({
       data-offer-id={offer.id}
       draggable={!!onDragStart}
       onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onMouseEnter={(e) => {
-        if (onMouseEnter) {
-          onMouseEnter((e.currentTarget as HTMLElement).getBoundingClientRect());
-        }
-      }}
-      onMouseLeave={onMouseLeave}
     >
       <div
         class={styles.tileImage}

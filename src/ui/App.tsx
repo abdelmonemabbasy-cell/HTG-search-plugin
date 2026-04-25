@@ -39,7 +39,6 @@ import { ProductTile } from './components/ProductTile';
 import { DropCta } from './components/DropCta';
 import { DetailView } from './components/DetailView';
 import { ResizeHandle } from './components/ResizeHandle';
-import { HoverPeek } from './components/HoverPeek';
 import { NumberTicker } from './components/NumberTicker';
 import { Toast } from './components/Toast';
 import { CommandPalette, type PaletteCommand } from './components/CommandPalette';
@@ -100,8 +99,6 @@ export function App(props: LoadedPayload) {
     new Set(saved.favourites ?? []),
   );
   const [anchorId, setAnchorId] = useState<string | null>(null);
-  const [hoverPeek, setHoverPeek] = useState<{ id: string; rect: DOMRect } | null>(null);
-  const hoverTimerRef = useRef<number | null>(null);
 
   // v0.7 chunk 2: toast + palette + presets + confetti
   const [presets, setPresets] = useState<UiPreset[]>(saved.presets ?? []);
@@ -335,21 +332,6 @@ export function App(props: LoadedPayload) {
     });
   };
 
-  const onTileHoverEnter = (id: string, rect: DOMRect) => {
-    if (hoverTimerRef.current !== null) {
-      window.clearTimeout(hoverTimerRef.current);
-    }
-    hoverTimerRef.current = window.setTimeout(() => {
-      setHoverPeek({ id, rect });
-    }, 450);
-  };
-  const onTileHoverLeave = () => {
-    if (hoverTimerRef.current !== null) {
-      window.clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    setHoverPeek(null);
-  };
 
   const openDetail = (offerId: string) => {
     setDetailOfferId(offerId);
@@ -456,7 +438,6 @@ export function App(props: LoadedPayload) {
     e.dataTransfer.setData('text/plain', offer.title);
     e.dataTransfer.effectAllowed = 'copy';
     attachDragImage(e, offer, locale);
-    onTileHoverLeave();
   };
 
   const onSectionDragStart = (offer: Offer, kind: SectionKind, e: DragEvent) => {
@@ -467,14 +448,11 @@ export function App(props: LoadedPayload) {
     e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const onTileDragEnd = (_offer: Offer, _e: DragEvent) => {
-    // Canvas drops are now handled exclusively by the main thread's
-    // figma.on('drop') registration, which gets accurate canvas coords
-    // and the node under the cursor. We deliberately do not emit DROP
-    // from here — doing so would create a duplicate card alongside the
-    // one figma.on('drop') already placed.
-    onTileHoverLeave();
-  };
+  // Canvas drops are handled exclusively by the main thread's
+  // figma.on('drop') registration, which gets accurate canvas coords
+  // and the node under the cursor. The iframe's dragend deliberately
+  // does nothing — doing so would create a duplicate card alongside
+  // the one figma.on('drop') already placed.
 
   // Resize: live-resize while dragging the corner handle, persist on commit.
   const handleResize = (s: UiSize) => {
@@ -883,11 +861,8 @@ export function App(props: LoadedPayload) {
                 pulse={pulseId === o.id}
                 onToggle={(e) => toggle(o.id, e)}
                 onToggleFavourite={() => toggleFavourite(o.id)}
-                onMouseEnter={(rect) => onTileHoverEnter(o.id, rect)}
-                onMouseLeave={onTileHoverLeave}
                 onOpen={() => openDetail(o.id)}
                 onDragStart={(e) => onTileDragStart(o, e)}
-                onDragEnd={(e) => onTileDragEnd(o, e)}
                 locale={locale}
               />
             ))}
@@ -918,11 +893,6 @@ export function App(props: LoadedPayload) {
         onResize={handleResize}
         onCommit={handleResizeCommit}
       />
-
-      {hoverPeek && (() => {
-        const o = visible.find((x) => x.id === hoverPeek.id);
-        return o ? <HoverPeek offer={o} rect={hoverPeek.rect} locale={locale} /> : null;
-      })()}
 
       {overlays}
     </div>

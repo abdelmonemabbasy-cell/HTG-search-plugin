@@ -82,16 +82,7 @@ declare const styles: {
   readonly "helpItemTitle": string;
   readonly "helpList": string;
   readonly "helpMenu": string;
-  readonly "hoverPeek": string;
-  readonly "hoverPeekBody": string;
-  readonly "hoverPeekImg": string;
-  readonly "hoverPeekLabel": string;
-  readonly "hoverPeekMeta": string;
-  readonly "hoverPeekStat": string;
-  readonly "hoverPeekStats": string;
-  readonly "hoverPeekTitle": string;
   readonly "htgPaletteIn": string;
-  readonly "htgPeekIn": string;
   readonly "htgPulse": string;
   readonly "htgShimmer": string;
   readonly "htgToastIn": string;
@@ -107,7 +98,6 @@ declare const styles: {
   readonly "logoText": string;
   readonly "marketSelect": string;
   readonly "marketSelectChevron": string;
-  readonly "marketSelectFlag": string;
   readonly "marketSelectWrap": string;
   readonly "palette": string;
   readonly "paletteEmpty": string;

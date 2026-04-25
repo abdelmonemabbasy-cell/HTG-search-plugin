@@ -184,7 +184,6 @@ export type StringKey =
   | 'uiPresetNamePrompt'
   | 'uiFavouriteAdd'
   | 'uiFavouriteRemove'
-  | 'uiHoverPeekTitle'
   | 'uiFindAll'
   | 'uiFindAllTooltip'
   | 'uiHelpTooltip'
@@ -381,7 +380,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPresetNamePrompt: 'Name this preset',
     uiFavouriteAdd: 'Add to favourites',
     uiFavouriteRemove: 'Remove from favourites',
-    uiHoverPeekTitle: 'Quick look',
     uiFindAll: 'Find all',
     uiFindAllTooltip: 'Find all HomeDrop cards on this page',
     uiHelpTooltip: 'Help & shortcuts',
@@ -577,7 +575,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPresetNamePrompt: 'Preset benennen',
     uiFavouriteAdd: 'Zu Favoriten hinzufügen',
     uiFavouriteRemove: 'Aus Favoriten entfernen',
-    uiHoverPeekTitle: 'Kurzansicht',
     uiFindAll: 'Alle finden',
     uiFindAllTooltip: 'Alle HomeDrop-Karten auf dieser Seite finden',
     uiHelpTooltip: 'Hilfe & Shortcuts',
@@ -773,7 +770,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPresetNamePrompt: 'Nombre del preset',
     uiFavouriteAdd: 'Añadir a favoritos',
     uiFavouriteRemove: 'Quitar de favoritos',
-    uiHoverPeekTitle: 'Vista rápida',
     uiFindAll: 'Buscar todas',
     uiFindAllTooltip: 'Buscar todas las tarjetas HomeDrop en esta página',
     uiHelpTooltip: 'Ayuda y atajos',
@@ -969,7 +965,6 @@ export const STRINGS: Record<Locale, Record<StringKey, string>> = {
     uiPresetNamePrompt: 'Nommez ce préréglage',
     uiFavouriteAdd: 'Ajouter aux favoris',
     uiFavouriteRemove: 'Retirer des favoris',
-    uiHoverPeekTitle: 'Aperçu rapide',
     uiFindAll: 'Tout trouver',
     uiFindAllTooltip: 'Trouver toutes les fiches HomeDrop sur cette page',
     uiHelpTooltip: 'Aide & raccourcis',

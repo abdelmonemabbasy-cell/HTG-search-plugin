@@ -263,13 +263,6 @@
   border-color: var(--htg-violet);
 }
 
-.marketSelectFlag {
-  font-size: 14px;
-  line-height: 1;
-  margin-right: 6px;
-  pointer-events: none;
-}
-
 .marketSelect {
   appearance: none;
   border: none;
@@ -1620,72 +1613,6 @@
   font-size: 11px;
   color: var(--htg-text-muted);
   margin-top: 2px;
-}
-
-/* ---------- v0.7: hover-peek side panel ---------- */
-.hoverPeek {
-  position: fixed;
-  width: 240px;
-  background: var(--htg-card);
-  border: 1px solid var(--htg-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--htg-shadow-3);
-  z-index: 25;
-  overflow: hidden;
-  pointer-events: none;
-  animation: htgPeekIn 0.18s ease-out;
-}
-
-@keyframes htgPeekIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.hoverPeekImg {
-  height: 130px;
-  background: var(--htg-surface) center / cover no-repeat;
-}
-
-.hoverPeekBody {
-  padding: 10px 12px 12px;
-}
-
-.hoverPeekLabel {
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--htg-text-subtle);
-  margin-bottom: 4px;
-}
-
-.hoverPeekTitle {
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--htg-text);
-}
-
-.hoverPeekMeta {
-  font-size: 11px;
-  color: var(--htg-text-muted);
-  margin-top: 4px;
-}
-
-.hoverPeekStats {
-  display: flex;
-  gap: 10px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--htg-border);
-  font-size: 11px;
-  color: var(--htg-text);
-}
-
-.hoverPeekStat strong {
-  display: block;
-  font-size: 13px;
-  color: var(--htg-text);
 }
 
 /* ---------- v0.7: NumberTicker ---------- */
