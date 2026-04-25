@@ -141,11 +141,11 @@ declare const styles: {
   readonly "searchRow": string;
   readonly "sectionGrid": string;
   readonly "sectionTile": string;
-  readonly "sectionTileCheck": string;
   readonly "sectionTileDescription": string;
   readonly "sectionTileDisabled": string;
   readonly "sectionTileIcon": string;
   readonly "sectionTileLabel": string;
+  readonly "sectionTileSelectBox": string;
   readonly "sectionTileSelected": string;
   readonly "sectionTileText": string;
   readonly "sortBar": string;

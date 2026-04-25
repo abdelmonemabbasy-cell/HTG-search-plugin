@@ -1260,20 +1260,15 @@
   line-height: 1.35;
 }
 
-.sectionTileCheck {
-  position: absolute;
+.sectionTileSelectBox {
   top: 10px;
   right: 10px;
-  width: 18px;
-  height: 18px;
-  background: linear-gradient(135deg, var(--htg-violet), var(--htg-magenta));
-  border-radius: 50%;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  left: auto;
+}
+
+.sectionTile:hover .sectionTileSelectBox,
+.sectionTile:focus-within .sectionTileSelectBox {
+  opacity: 1;
 }
 
 .btnGhost {

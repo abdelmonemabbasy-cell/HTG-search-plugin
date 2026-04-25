@@ -251,7 +251,14 @@ export function DetailView({
                   {hasData ? t(keys.desc, locale) : t('uiTileNotAvailable', locale)}
                 </div>
               </div>
-              {isSelected && <span class={styles.sectionTileCheck}>✓</span>}
+              {hasData && (
+                <span
+                  class={`${styles.tileSelectBox} ${styles.sectionTileSelectBox} ${isSelected ? styles.tileSelectBoxOn : ''}`}
+                  aria-hidden="true"
+                >
+                  {isSelected ? '✓' : ''}
+                </span>
+              )}
             </button>
           );
         })}

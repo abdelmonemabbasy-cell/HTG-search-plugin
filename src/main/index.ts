@@ -246,7 +246,7 @@ async function handleNativeDropOffer(
   if (dropTarget && hasFieldNames(dropTarget)) {
     const filled = await populateSelection(dropTarget, offer, locale);
     if (filled > 0) {
-      const label = `Populated ${filled} layer${filled === 1 ? '' : 's'} in "${dropTarget.name}".`;
+      const label = filled === 1 ? 'Filled 1 field' : `Filled ${filled} fields`;
       figma.notify(label);
       emit<InsertedHandler>('INSERTED', {
         createdNodeIds: [],
@@ -261,7 +261,7 @@ async function handleNativeDropOffer(
   await landAtDropEvent(card, event);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: [card.id],
-    label: `Dropped "${offer.title}" on the canvas.`,
+    label: 'Card dropped',
     kind: 'dropped',
   });
 }
@@ -291,7 +291,7 @@ async function handleNativeDropMulti(
   }
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: created.map((n) => n.id),
-    label: `Dropped ${offers.length} properties as a ${mode}.`,
+    label: `${offers.length} cards dropped`,
     kind: 'dropped',
   });
 }
@@ -309,7 +309,7 @@ async function handleNativeDropSection(
   await landAtDropEvent(node, event);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: [node.id],
-    label: `Dropped "${kind}" for "${offer.title}".`,
+    label: 'Section dropped',
     kind: 'dropped',
   });
 }
@@ -403,25 +403,23 @@ async function insertLevel1(payload: InsertCardsPayload): Promise<void> {
   if (target && mode === 'single' && offers.length === 1) {
     const filled = await populateSelection(target, offers[0], locale);
     if (filled > 0) {
-      figma.notify(
-        `Populated ${filled} layer${filled === 1 ? '' : 's'} in "${target.name}"`,
-      );
+      const label = filled === 1 ? 'Filled 1 field' : `Filled ${filled} fields`;
+      figma.notify(label);
+      emit<InsertedHandler>('INSERTED', {
+        createdNodeIds: [],
+        label,
+        kind: 'populated',
+      });
       return;
     }
-    figma.notify(
-      `No #fieldName layers in "${target.name}" — inserting a new card instead.`,
-    );
+    figma.notify('No #fields found — dropped a card instead');
   }
 
   const created = await insertCards(offers, mode, gridColumns, locale, platform);
   figma.currentPage.selection = created;
   figma.viewport.scrollAndZoomIntoView(created);
 
-  const verb = mode === 'grid' ? 'grid' : mode === 'list' ? 'list' : 'card';
-  const label =
-    offers.length === 1
-      ? `Inserted "${offers[0].title}" (${platform}, ${locale.toUpperCase()})`
-      : `Inserted ${offers.length} properties as a ${verb}`;
+  const label = offers.length === 1 ? 'Card dropped' : `${offers.length} cards dropped`;
   figma.notify(label);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: created.map((n) => n.id),
@@ -498,7 +496,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
   const { offerId, sections, locale, platform } = payload;
   const offer = OFFER_BY_ID[offerId];
   if (!offer || sections.length === 0) {
-    figma.notify('Pick at least one section to insert.', { error: true });
+    figma.notify('Pick at least one section to drop', { error: true });
     return;
   }
 
@@ -510,7 +508,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
     figma.currentPage.appendChild(node);
     figma.currentPage.selection = [node];
     figma.viewport.scrollAndZoomIntoView([node]);
-    const label = `Inserted "${sections[0]}" for "${offer.title}"`;
+    const label = 'Section dropped';
     figma.notify(label);
     emit<InsertedHandler>('INSERTED', {
       createdNodeIds: [node.id],
@@ -545,7 +543,7 @@ async function insertSections(payload: InsertSectionsPayload): Promise<void> {
 
   figma.currentPage.selection = [container];
   figma.viewport.scrollAndZoomIntoView([container]);
-  const label = `Inserted ${sections.length} detail sections for "${offer.title}"`;
+  const label = `${sections.length} sections dropped`;
   figma.notify(label);
   emit<InsertedHandler>('INSERTED', {
     createdNodeIds: [container.id],
